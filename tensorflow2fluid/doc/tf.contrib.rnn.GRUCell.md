@@ -50,7 +50,7 @@ TensorFlow：返回一个二元组，分别是当前时刻的输出值与隐藏�
 PaddlePaddle：返回一个三元组，即`(hidden_value, reset_hidden_value, gate_value)`。后面两个元素为内部使用，用户可以只关注第一个元素。
 
 
-#### 代码示例
+### 代码示例
 ```
 emb_size = 32                                                                                                                                                                                                                                 
 emb_vocab = 10000                                                                                                                                                                                                                             

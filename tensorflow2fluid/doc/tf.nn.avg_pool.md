@@ -47,7 +47,7 @@ pad_right = pad_size - pad_left
 ```
 PaddlePaddle：在输入的上、下、左、右分别padding，size大小为`pool_padding`
 
-### 示例代码
+### 代码示例
 ```
 inputs = fluid.layers.data(dtype='float32', shape=[3, 300, 300], name='inputs')
 

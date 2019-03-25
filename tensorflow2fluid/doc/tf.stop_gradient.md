@@ -9,9 +9,10 @@ tf.stop_gradient(
 )
 ```
 
-tensorflow中，使用stop_gradient表示该tensor不需要进行bp。而在paddlepaddle中，每个tensor具有stop_gradient的属性，用户可以将该属性直接设置成True/False。
+### PaddlePaddle实现
+TensorFlow中，使用`stop_gradient`表示该tensor不需要进行bp。而在PaddlePaddle中，每个tensor具有`stop_gradient`的属性，用户可以将该属性直接设置成`True`/`False`。
 
-## paddlepaddle示例:
+## 代码示例
 ```python
 # 将tensor t设置成不需要bp
 t.stop_gradient = True

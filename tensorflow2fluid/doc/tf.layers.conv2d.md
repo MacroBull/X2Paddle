@@ -1,7 +1,7 @@
 
-### tf.layers.conv2d
+## tf.layers.conv2d
 
-#### [tf.layers.conv2d](https://www.tensorflow.org/api_docs/python/tf/layers/conv2d)
+### [tf.layers.conv2d](https://www.tensorflow.org/api_docs/python/tf/layers/conv2d)
 ``` python
 tf.layers.conv2d(
     inputs,
@@ -26,7 +26,7 @@ tf.layers.conv2d(
 )
 ```
 
-#### [paddle.fluid.layers.conv2d](http://paddlepaddle.org/documentation/docs/zh/1.3/api_cn/layers_cn.html#paddle.fluid.layers.conv2d)
+### [paddle.fluid.layers.conv2d](http://paddlepaddle.org/documentation/docs/zh/1.3/api_cn/layers_cn.html#paddle.fluid.layers.conv2d)
 ``` python
 paddle.fluid.layers.conv2d(
     input, 
@@ -43,7 +43,7 @@ paddle.fluid.layers.conv2d(
     name=None)
 ```
 
-### 功能差异：
+### 功能差异
 
 #### 数据格式
 
@@ -77,7 +77,7 @@ TensorFlow：深度可分离卷积使用[tf.layers.separable_conv2d](https://www
 PaddlePaddle: 使用`paddle.fluid.layers.conv2d`，可参考
 [PaddlePaddle对卷积的说明文档](http://paddlepaddle.org/documentation/docs/zh/1.3/api_guides/low_level/layers/conv.html), 同时也可参考[tf.nn.separable_conv2d](tf.nn.separable_conv2d.md)中的代码示例。
 
-### 代码示例:
+### 代码示例
 ```python
 # 结合pad2d，实现SAME方式的padding
 # 输入Shape：(None, 3, 200, 200)

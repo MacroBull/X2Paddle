@@ -27,30 +27,30 @@ embedding = fluid.layers.embedding(input=data, size=[emb_vocab, emb_size])
                                     
 drnn = fluid.layers.DynamicRNN()
 with drnn.block():
-        # 定义单步输入
-        word = drnn.step_input(embedding)
+    # 定义单步输入
+    word = drnn.step_input(embedding)
         
-        # 定义第一层lstm的hidden_state, cell_state
-        prev_hid0 = drnn.memory(shape=[num_unit_0])
-        prev_cell0 = drnn.memory(shape=[num_unit_0])
+    # 定义第一层lstm的hidden_state, cell_state
+    prev_hid0 = drnn.memory(shape=[num_unit_0])
+    prev_cell0 = drnn.memory(shape=[num_unit_0])
         
-        # 定义第二层lstm的hidden_state, cell_state
-        prev_hid1 = drnn.memory(shape=[num_unit_1])
-        prev_cell1 = drnn.memory(shape=[num_unit_1])
+    # 定义第二层lstm的hidden_state, cell_state
+    prev_hid1 = drnn.memory(shape=[num_unit_1])
+    prev_cell1 = drnn.memory(shape=[num_unit_1])
 
-		 # 执行两层lstm运算
-        cur_hid0, cur_cell0 = layers.lstm_unit(word, prev_hid0, prev_cell0)
-        cur_hid1, cur_cell1 = layers.lstm_unit(cur_hid0, prev_hid1, prev_cell1)
+    # 执行两层lstm运算
+    cur_hid0, cur_cell0 = layers.lstm_unit(word, prev_hid0, prev_cell0)
+    cur_hid1, cur_cell1 = layers.lstm_unit(cur_hid0, prev_hid1, prev_cell1)
 
-        # 更新第一层lstm的hidden_state, cell_state
-        drnn.update_memory(prev_hid0, cur_hid0)  
-        drnn.update_memory(prev_cell0, cur_cell0)  
+    # 更新第一层lstm的hidden_state, cell_state
+    drnn.update_memory(prev_hid0, cur_hid0)  
+    drnn.update_memory(prev_cell0, cur_cell0)  
        
-        # 更新第二层lstm的hidden_state, cell_state
-        drnn.update_memory(prev_hid1, cur_hid1)  
-        drnn.update_memory(prev_cell1, cur_cell1)  
+    # 更新第二层lstm的hidden_state, cell_state
+    drnn.update_memory(prev_hid1, cur_hid1)  
+    drnn.update_memory(prev_cell1, cur_cell1)  
 
-        drnn.output(cur_hid1)
+    drnn.output(cur_hid1)
 
 out = drnn()
 last = fluid.layers.sequence_last_step(out)

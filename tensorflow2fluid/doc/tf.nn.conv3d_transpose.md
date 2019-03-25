@@ -33,7 +33,7 @@ paddle.fluid.layers.conv3d_transpose(
 )
 ```
 
-### 功能差异：
+### 功能差异
 
 #### 数据格式
 
@@ -75,7 +75,7 @@ PaddlePaddle: 输出大小计算公式如下，差异主要由于TensorFlow在`c
 output_size = (input_size - 1) * stride - 2 * padding + dilation * (kernel - 1) + 1
 ```
 
-## paddlepaddle示例:
+### 代码示例
 ```python
 # TensorFlow使用conv3d_transpose
 # 输入shape: [-1, 5， 20, 40, 3]

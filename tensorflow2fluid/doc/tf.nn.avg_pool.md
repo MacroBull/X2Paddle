@@ -31,8 +31,8 @@ paddle.fluid.layers.pool2d(
 ### 功能差异
 
 #### 输入格式
-TensorFlow: 默认为`NHWC`的数据输入格式，同时也可通过修改`data_format`参数，支持`NCHW`的输入  
-PaddlePaddle：只支持`NCHW`的数据输入格式
+TensorFlow: 默认为`NHWC`的数据输入格式，同时也可通过修改`data_format`参数，支持`NCHW`的输入；  
+PaddlePaddle：只支持`NCHW`的数据输入格式。
 
 #### Padding机制
 

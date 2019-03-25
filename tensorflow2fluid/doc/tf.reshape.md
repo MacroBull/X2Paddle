@@ -24,11 +24,11 @@ paddle.fluid.layers.reshape(
 ### 功能差异：
 
 #### shape标记差别
-TensorFlow: shape 中可以使用单独一个-1，表示待推断的维度；
+TensorFlow: shape 中可以使用单独一个-1，表示待推断的维度；  
 PaddlePaddle: shape 中除了可以使用单独一个-1表示待推断维度外，还能使用0，表示在输入tensor原来的shape中对应位置的维度。注意，0的下标不能超过原来tensor的rank。
 
 
-## paddlepaddle示例:
+## 代码示例
 ```python
 # 输入 tensor t 的 shape 为[3, 4]
 

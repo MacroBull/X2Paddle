@@ -34,8 +34,10 @@ paddle.fluid.layers.gru_unit(
 #### 功能差异
 
 ##### 实现方式
-TensorFlow：GRU的实现来自[论文1](http://arxiv.org/abs/1406.1078)；  
-PaddlePaddle：GRU有两种实现方式，当设置`origin_mode=False`则来自[论文1](http://arxiv.org/abs/1406.1078)，当设置`origin_mode=True`则来自[论文2](https://arxiv.org/pdf/1412.3555.pdf)。
+TensorFlow：GRU的实现方式见论文[Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation](http://arxiv.org/abs/1406.1078)；  
+PaddlePaddle：GRU有两种实现方式，当设置`origin_mode=False`时，与TensorFlow实现方式一致；当设置`origin_mode=True`时，实现方式则参考论文[Empirical Evaluation of
+Gated Recurrent Neural Networks
+on Sequence Modeling](https://arxiv.org/pdf/1412.3555.pdf)。
 
 
 ##### 使用方式
@@ -44,7 +46,7 @@ TensorFlow：首先定义`GRUCell`对象，定义对象时只需要指定单元�
 PaddlePaddle：提供op形式的调用接口，通常与[paddle.fluid.layers.DynamicRNN](http://paddlepaddle.org/documentation/docs/zh/1.3/api_cn/layers_cn.html#dynamicrnn)配合使用，以获取序列中的单步输入。**注意，为了提高`gru_unit`的计算效率，用户在使用该接口时需要遵从如下约定：假设要指定的GRU单元数为`num_units`，则`size`以及`input.shape[-1]`必须为`3*num_units`，`hidden.shape[-1]`为`num_units`，见如下代码示例小节。**
 
 ##### 返回值
-Tensorflow：返回一个二元组，分别是当前时刻的输出值与隐藏状态，实际上输出值与隐藏状态为相同的tensor；  
+TensorFlow：返回一个二元组，分别是当前时刻的输出值与隐藏状态，实际上输出值与隐藏状态为相同的tensor；  
 PaddlePaddle：返回一个三元组，即`(hidden_value, reset_hidden_value, gate_value)`。后面两个元素为内部使用，用户可以只关注第一个元素。
 
 

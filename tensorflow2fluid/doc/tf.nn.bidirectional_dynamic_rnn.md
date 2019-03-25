@@ -1,7 +1,7 @@
-### tf.nn.bidirectional_dynamic_rnn
+## tf.nn.bidirectional_dynamic_rnn
 
 
-#### [tf.nn.bidirectional_dynamic_rnn](https://www.tensorflow.org/api_docs/python/tf/nn/bidirectional_dynamic_rnn)
+### [tf.nn.bidirectional_dynamic_rnn](https://www.tensorflow.org/api_docs/python/tf/nn/bidirectional_dynamic_rnn)
 
 ```python
 tf.nn.bidirectional_dynamic_rnn(
@@ -19,14 +19,14 @@ tf.nn.bidirectional_dynamic_rnn(
 )
 ```
 
-#### 功能差异
+### 功能差异
 
-##### 使用方式
-Tensorflow：用户通过定义正向与反向`cell`，可以实现一个双向RNN网络的功能;  
+#### 使用方式
+TensorFlow：用户通过定义正向与反向`cell`，可以实现一个双向RNN网络的功能;  
 
 PaddlePaddle：并没有提供一个对应的接口，用户可以使用`DynamicRNN`组合实现得到，详见如下代码示例。
 
-#### paddlepaddle代码示例
+### 代码示例
 ```
 # 如下代码片段实现双向lstm网络，lstm单元数为16
 

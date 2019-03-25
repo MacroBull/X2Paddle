@@ -1,6 +1,6 @@
-### tf.case
+## tf.case
 
-#### [tf.case](https://www.tensorflow.org/api_docs/python/tf/case)
+### [tf.case](https://www.tensorflow.org/api_docs/python/tf/case)
 
 ```python
 tf.case(
@@ -12,16 +12,16 @@ tf.case(
 )
 ```
 
-#### [paddle.fluid.layers.While](http://paddlepaddle.org/documentation/docs/zh/1.3/api_cn/layers_cn.html#while)
+### [paddle.fluid.layers.While](http://paddlepaddle.org/documentation/docs/zh/1.3/api_cn/layers_cn.html#while)
 ```python
 class paddle.fluid.layers.Switch(
     name=None
 )
 ```
 
-#### 功能差异
+### 功能差异
 
-##### 使用方式
+#### 使用方式
 TensorFlow：用户采用定义`条件-函数对`的方式，创建一个`case`操作；
 
 PaddlePaddle：用户通过在`switch`代码块中，定义`case`分支方式，实现`switch`操作。与TensorFlow对比，在使用形式上更类似于传统的c/c++代码。

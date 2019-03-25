@@ -47,6 +47,4 @@ PaddlePaddle：通过设置`print_phase`，可以控制是否打印`input`的梯
 
 # 打印input的内容，如果有梯度的话也将打印梯度
 print(input, message="content of input")
- 
-
 ```

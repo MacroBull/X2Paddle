@@ -31,19 +31,19 @@ paddle.fluid.layers.pool2d(
 ### 功能差异
 
 #### 输入格式
-TensorFlow: 默认为`NHWC`的数据输入格式，同时也可通过修改`data_format`参数，支持`NCHW`的输入  
-PaddlePaddle：只支持`NCHW`的数据输入格式
+TensorFlow: 默认为`NHWC`的数据输入格式，同时也可通过修改`data_format`参数，支持`NCHW`的输入；  
+PaddlePaddle：只支持`NCHW`的数据输入格式。
 
 #### Padding机制
 
-Tensorflow: 存在`SAME`和`VALID`两种padding方式。当为`SAME`时，padding的size计算方式如下，仅在最右和最下进行padding
+Tensorflow: 存在`SAME`和`VALID`两种padding方式。当为`SAME`时，padding的size计算方式如下，仅在最右和最下进行padding；
 ```
 ceil_size = ceil(input_size / stride)
 pad_size = (ceil_size - 1) * stride + filter_size - input_size
 ```
-PaddlePaddle：在输入的上、下、左、右分别padding，size大小为`pool_padding`，通过示例代码，可实现与Tensorflow中`max_pool`的`SAME`方式
+PaddlePaddle：在输入的上、下、左、右分别padding，size大小为`pool_padding`，通过示例代码，可实现与Tensorflow中`max_pool`的`SAME`方式。
 
-### 示例代码
+### 代码示例
 ```
 inputs = fluid.layers.data(dtype='float32', shape=[3, 300, 300], name='inputs')
 

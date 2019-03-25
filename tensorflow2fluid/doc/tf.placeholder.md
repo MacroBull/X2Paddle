@@ -22,14 +22,13 @@ paddle.fluid.layers.data(
     stop_gradient=True)
 ```
 
-### 功能差异：
-#### 参数种类：
-TensorFlow: 使用placeholder创建一个类型为dtype，形状为shape的输入tensor，对于shape中的batch维度，需要用户使用None指定；  
-PaddlePaddle: 默认在第0维为用户插入batch维度，在特殊情形下，用户也可以将append_batch_size设置为False，并使用-1在shape中指定
-batch维度所在的位置。
+### 功能差异
+#### Batch维度处理
+TensorFlow: 对于shape中的batch维度，需要用户使用`None`指定；  
+PaddlePaddle: 将第1维设置为`-1`表示batch维度；如若第1维为正数，则会默认在最前面插入batch维度，如若要避免batch维，可将参数`append_batch_size`设为`False`。
 
 
-## paddlepaddle示例:
+### 代码示例
 ```python
 
 # 创建输入型tensor out，其shape为[-1, 3, 4], 数据类型为float32

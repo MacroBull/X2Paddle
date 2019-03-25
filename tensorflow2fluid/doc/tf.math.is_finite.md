@@ -17,8 +17,8 @@ paddle.fluid.layers.isfinite(x)
 ### 功能差异
 
 #### 输出格式
-TensorFlow: 返回elementwise检查的结果，即输出与输入shape一致  
-PaddlePaddle: 返回结果仅包含一个boolean值，若输入数据中均为`infinite`，则返回True，否则返回False
+TensorFlow: 返回elementwise检查的结果，即输出与输入shape一致；  
+PaddlePaddle: 返回结果仅包含一个boolean值，若输入数据中均为`infinite`，则返回True，否则返回False。
 
 ### 代码示例
 ```python

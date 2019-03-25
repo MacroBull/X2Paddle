@@ -29,7 +29,7 @@ TensorFlow：indices shape 没有限定；支持设置on与off的值；
 PaddlePaddle：input限定为2-D tensor，shape为(batch, 1)。
 
 #### 参数种类
-TensorFlow：可以配置`on_value`和`off_value`，默认为`1`和`0`；
+TensorFlow：可以配置`on_value`和`off_value`，默认为`1`和`0`；  
 PaddlePaddle：无对应配置选项，即为默认的`1`和`0`。
 
 ### 代码示例

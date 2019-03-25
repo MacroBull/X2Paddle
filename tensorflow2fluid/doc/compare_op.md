@@ -1,4 +1,4 @@
-### 比较函数
+## 比较函数
 
 在PaddlePaddle中使用运算符来对tensor之间进行`element-wise`方式的对比。其与TensorFlow相应接口关系如下表所示，
 

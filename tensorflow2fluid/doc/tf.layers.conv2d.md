@@ -61,7 +61,7 @@ PaddlePaddle：只支持输入数据格式为`NCHW`，且**卷积核格式**与T
 |NCHW | (in_channels, filters_num, kernel_h, kernel_w) | (batch, filters_num, out_h, out_w)|
 
 #### Padding机制
-TensorFlow: `SAME`和`VALID`两种选项。当为`SAME`时，padding的计算方式如下所示
+TensorFlow: `SAME`和`VALID`两种选项。当为`SAME`时，padding的计算方式如下所示,
 ```python
 # 计算在width上的padding size
 # height上的padding计算方式同理
@@ -70,10 +70,10 @@ pad_size = (ceil_size - 1) * stride_width + filter_width - input_width
 pad_left = ceil(pad_size / 2)
 pad_right = pad_size - pad_left
 ```
-PaddlePaddle：`padding`参数表示在输入图像四周padding的size大小
+PaddlePaddle：`padding`参数表示在输入图像四周padding的size大小。
 
 #### 参数差异
-TensorFlow：深度可分离卷积使用[tf.layers.separable_conv2d](https://www.tensorflow.org/api_docs/python/tf/layers/separable_conv2d)接口  
+TensorFlow：深度可分离卷积使用[tf.layers.separable_conv2d](https://www.tensorflow.org/api_docs/python/tf/layers/separable_conv2d)接口;  
 PaddlePaddle: 使用`paddle.fluid.layers.conv2d`，可参考
 [PaddlePaddle对卷积的说明文档](http://paddlepaddle.org/documentation/docs/zh/1.3/api_guides/low_level/layers/conv.html), 同时也可参考[tf.nn.separable_conv2d](tf.nn.separable_conv2d.md)中的代码示例。
 

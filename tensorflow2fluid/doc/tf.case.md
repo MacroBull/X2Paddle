@@ -27,7 +27,7 @@ TensorFlow：用户采用定义`条件-函数对`的方式，创建一个`case`�
 PaddlePaddle：用户通过在`switch`代码块中，定义`case`分支方式，实现`switch`操作。与TensorFlow对比，在使用形式上更类似于传统的c/c++代码。
 
 
-#### 代码示例
+### 代码示例
 ```
 # 如下代码展示进行学习率的调度，当global_step超过某个数值时，学习率减小
 

@@ -28,10 +28,10 @@ paddle.fluid.layers.image_resize(
 
 #### 功能差异：
 ##### 参数种类：
-tensorflow：支持`BILINEAR`,`NEAREST`,`BICUBIC`, `AREA`四种方式  
-paddlepaddle：支持`BILINEAR`和`NEAREST`两种方式， `align_mode`是`BILINEAR`的可选项，当为1的时候，与TensorFlow功能一致
+tensorflow：支持`BILINEAR`,`NEAREST`,`BICUBIC`, `AREA`四种方式；  
+paddlepaddle：支持`BILINEAR`和`NEAREST`两种方式， `align_mode`是`BILINEAR`的可选项，当为1的时候，与TensorFlow功能一致。
 
-#### paddlepaddle示例:
+### 代码示例
 ```python
 # 输入图像数据shape为[None, 3, 300, 300]
 inputs = fluid.layers.data(dtype='float32', shape=[3, 300, 300], name='inputs')

@@ -14,13 +14,13 @@ tf.math.is_finite(
 paddle.fluid.layers.isfinite(x)
 ```
 
-### 功能差异：
+### 功能差异
 
 #### 输出格式
 TensorFlow: 返回elementwise检查的结果，即输出与输入shape一致  
 PaddlePaddle: 返回结果仅包含一个boolean值，若输入数据中均为`infinite`，则返回True，否则返回False
 
-## paddlepaddle示例:
+### 代码示例
 ```python
 # TensorFlow示例
 # 输入[2.1, 3.2, 4.5]

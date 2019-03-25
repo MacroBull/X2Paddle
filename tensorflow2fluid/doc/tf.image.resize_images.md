@@ -1,7 +1,7 @@
 
-### tf.image.resize_images
+## tf.image.resize_images
 
-#### [tf.image.resize_images](https://www.tensorflow.org/api_docs/python/tf/image/resize_images)
+### [tf.image.resize_images](https://www.tensorflow.org/api_docs/python/tf/image/resize_images)
 ``` python
 tf.image.resize_images(
     images,
@@ -12,7 +12,7 @@ tf.image.resize_images(
 )
 ```
 
-#### [paddle.fluid.layers.image_resize](http://paddlepaddle.org/documentation/docs/zh/1.3/api_cn/layers_cn.html#paddle.fluid.layers.image_resize)
+### [paddle.fluid.layers.image_resize](http://paddlepaddle.org/documentation/docs/zh/1.3/api_cn/layers_cn.html#paddle.fluid.layers.image_resize)
 ``` python
 paddle.fluid.layers.image_resize(
     input, 
@@ -26,10 +26,10 @@ paddle.fluid.layers.image_resize(
 )
 ```
 
-#### 功能差异：
-##### 参数种类：
-tensorflow：支持`BILINEAR`,`NEAREST`,`BICUBIC`, `AREA`四种方式；  
-paddlepaddle：支持`BILINEAR`和`NEAREST`两种方式， `align_mode`是`BILINEAR`的可选项，当为1的时候，与TensorFlow功能一致。
+### 功能差异
+#### 参数种类
+TensorFlow：支持`BILINEAR`,`NEAREST`,`BICUBIC`, `AREA`四种方式；  
+PaddlePaddle：支持`BILINEAR`和`NEAREST`两种方式， `align_mode`是`BILINEAR`的可选项，当为1的时候，与TensorFlow功能一致。
 
 ### 代码示例
 ```python

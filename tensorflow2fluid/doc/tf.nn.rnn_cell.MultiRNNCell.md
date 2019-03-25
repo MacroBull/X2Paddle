@@ -1,6 +1,6 @@
-### tf.nn.rnn_cell.MultiRNNCell
+## tf.nn.rnn_cell.MultiRNNCell
 
-#### [tf.nn.rnn_cell.MultiRNNCell](https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell/MultiRNNCell)
+### [tf.nn.rnn_cell.MultiRNNCell](https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell/MultiRNNCell)
 
 ```python
 tf.nn.rnn_cell.MultiRNNCell(
@@ -9,15 +9,11 @@ tf.nn.rnn_cell.MultiRNNCell(
 )
 ```
 
-#### 功能差异
-
-##### 使用方式
-Tensorflow：用户通过定义多个单独的`RNNCell`生成一个`cell`列表，进而调用`MultiRNNCell`，可以实现一个多层RNN网络的功能;  
-
-PaddlePaddle：并没有提供一个对应的接口，用户可以在`DynamicRNN`的block中，通过组合多个RNN相关的`unit`实现类似的功能，详见如下代码示例。
+### PaddlePaddle实现
+在Tensorflow中，用户通过定义多个单独的`RNNCell`生成一个`cell`列表，进而调用`MultiRNNCell`，可以实现一个多层RNN网络的功能。PaddlePaddle并没有提供一个对应的接口，用户可以在`DynamicRNN`的block中，通过组合多个RNN相关的`unit`实现类似的功能，可参考代码示例。
 
 
-#### paddlepaddle代码示例
+### 代码示例
 ```
 # 如下代码片段实现两层lstm网络，第一层单元数为32，第二层单元数为16
 num_unit_0 = 32

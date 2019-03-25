@@ -20,14 +20,14 @@ tf.contrib.rnn.GRUCell(
 
 ```python
 paddle.fluid.layers.gru_unit(
-		input, 
-		hidden, 
-		size, 
-		param_attr=None, 
-		bias_attr=None, 
-		activation='tanh', 
-		gate_activation='sigmoid', 
-		origin_mode=False
+    input, 
+    hidden, 
+    size, 
+    param_attr=None, 
+    bias_attr=None, 
+    activation='tanh', 
+    gate_activation='sigmoid', 
+    origin_mode=False
 )
 ```
 
@@ -65,18 +65,18 @@ emb_fc = layers.fc(embedding, num_unit_0 * 3)
                                                                                                                                                                                                                                               
 drnn = fluid.layers.DynamicRNN()                                                                                                                                                                                                              
 with drnn.block():                                                                                                                                                                                                                            
-        word = drnn.step_input(emb_fc) 
+    word = drnn.step_input(emb_fc) 
         
-        # 指定上一时刻的隐状态，单元数为num_unit_0                                                                                                                                                                                                       
-        prev_hid0 = drnn.memory(shape=[num_unit_0])                                                                                                                                                                                           
+    # 指定上一时刻的隐状态，单元数为num_unit_0                                                                                                                                                                                                       
+    prev_hid0 = drnn.memory(shape=[num_unit_0])                                                                                                                                                                                           
         
-        # 执行gru_unit计算，num_unit_0 为实际的单元数                                                                                                                                                                                                                                      
-        cur_hid0, _, _ = layers.gru_unit(word, prev_hid0, num_unit_0 * 3)
+    # 执行gru_unit计算，num_unit_0 为实际的单元数                                                                                                                                                                                                                                      
+    cur_hid0, _, _ = layers.gru_unit(word, prev_hid0, num_unit_0 * 3)
         
-        # 更新隐状态                                                                                                                                                                                                                                              
-        drnn.update_memory(prev_hid0, cur_hid0)                                                                                                                                                                                               
+    # 更新隐状态                                                                                                                                                                                                                                              
+    drnn.update_memory(prev_hid0, cur_hid0)                                                                                                                                                                                               
                                                                                                                                                                                                                                               
-        drnn.output(cur_hid0)                                                                                                                                                                                                                 
+    drnn.output(cur_hid0)                                                                                                                                                                                                                 
                                                                                                                                                                                                                                               
 out = drnn()                                                                                                                                                                                                                                  
 last = fluid.layers.sequence_last_step(out)                       

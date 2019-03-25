@@ -22,9 +22,9 @@ paddle.fluid.layers.unsqueeze(
 ### 功能差异
 
 #### 参数类型
-TensorFlow：使用`axis`指定要增加维度的位置，支持负数进行索引，并且`axis`可以是python scalar也可以是`tf.tensor`；  
+TensorFlow：`axis`为`int`类型或`0-D`tensor, 使用`axis`指定要增加维度的位置，支持负数进行索引；
 
-PaddlePaddle：使用`axes`表示要增加维度的位置列表，支持在多个位置同时增加维度，也支持负数进行索引，但是`axes`只能是python list。
+PaddlePaddle：`axes`为`list`类型，表示要增加维度的位置列表，支持在多个位置同时增加维度，也支持负数进行索引。
 
 
 ### 代码示例

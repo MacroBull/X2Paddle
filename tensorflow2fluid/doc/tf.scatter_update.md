@@ -1,6 +1,6 @@
-### tf.scatter_update
+## tf.scatter_update
 
-#### [tf.scatter_update](https://www.tensorflow.org/api_docs/python/tf/scatter_update)
+### [tf.scatter_update](https://www.tensorflow.org/api_docs/python/tf/scatter_update)
 
 ```python
 tf.scatter_update(
@@ -12,7 +12,7 @@ tf.scatter_update(
 )
 ```
 
-#### [paddle.fluid.layers.scatter](http://paddlepaddle.org/documentation/docs/zh/1.2/api_cn/layers_cn.html#scatter)
+### [paddle.fluid.layers.scatter](http://paddlepaddle.org/documentation/docs/zh/1.2/api_cn/layers_cn.html#scatter)
 
 ```python
 paddle.fluid.layers.scatter(
@@ -23,18 +23,18 @@ paddle.fluid.layers.scatter(
 )
 ```
 
-#### 功能差异
+### 功能差异
 
-##### 参数类型
+#### 参数类型
 
 Tensorflow：`indices`支持任意维度，可以是变量，也可以是常量;  
 PaddlePaddle：`index`只支持1-d Variable。
 
-##### 其他
+#### 其他
 Tensorflow：`updates`支持numpy-style broadcasting;  
 PaddlePaddle：`updates`要求其rank与`input`相同，同时`updates.shape[0]`等于`index.shape[0]`。
 
-#### paddlepaddle代码示例
+### 代码示例
 ```
 # x是dtype为float32, shape为[3,9,5]的张量    
 

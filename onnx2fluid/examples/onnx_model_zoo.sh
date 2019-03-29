@@ -1,13 +1,13 @@
 #! /usr/bin/env sh
 
-# setopt SH_WORD_SPLIT # for zsh
+# setopt SH_WORD_SPLIT # if zsh
 
 base_url="https://s3.amazonaws.com/download.onnx/models/opset_9/"
 flags="-e -o /tmp/export/"
 
-# alias http_get="wget -c"
+# alias http_get="wget -c" # if no aria2
 alias http_get="aria2c -c -s8 -x8"
-# alias python="python3"
+# alias python="python3" # if ...
 
 bvlc_alexnet()
 {
@@ -82,7 +82,7 @@ bvlc_reference_rcnn_ilsvrc13()
     for pb_dir in "$bn_tar"/*/
     do
         echo "converting $pb_dir"
-        python convert_data_pb_0.py "$pb_dir" data_0 fc_rcnn_1
+        python convert_data_pb_0.py "$pb_dir" data_0 fc-rcnn_1
         python -m onnx2fluid $flags "$fn_model" -t $(dirname "$pb_dir/x").npz
     done
 }
@@ -150,14 +150,14 @@ resnet50()
     for npz in "$bn_tar"/*.npz
     do
         echo "converting $npz ..."
-        python convert_data_npz_0.py "$npz" gpu_0_data_0 gpu_0_softmaxout_1
+        python convert_data_npz_0.py "$npz" gpu_0/data_0 gpu_0/softmaxout_1
         python -m onnx2fluid $flags "$fn_model" -t "$npz"
     done
 
     for pb_dir in "$bn_tar"/*/
     do
         echo "converting $pb_dir"
-        python convert_data_pb_0.py "$pb_dir" gpu_0_data_0 gpu_0_softmaxout_1
+        python convert_data_pb_0.py "$pb_dir" gpu_0/data_0 gpu_0/softmaxout_1
         python -m onnx2fluid $flags "$fn_model" -t $(dirname "$pb_dir/x").npz
     done
 }
@@ -175,7 +175,7 @@ shufflenet()
     for pb_dir in "$bn_tar"/*/
     do
         echo "converting $pb_dir"
-        python convert_data_pb_0.py "$pb_dir" gpu_0_data_0 gpu_0_softmaxout_1
+        python convert_data_pb_0.py "$pb_dir" gpu_0/data_0 gpu_0/softmaxout_1
         python -m onnx2fluid $flags "$fn_model" -t $(dirname "$pb_dir/x").npz
     done
 }
@@ -247,7 +247,7 @@ zfnet512()
     for pb_dir in "$bn_tar"/*/
     do
         echo "converting $pb_dir"
-        python convert_data_pb_0.py "$pb_dir" gpu_0_data_0 gpu_0_softmax_1
+        python convert_data_pb_0.py "$pb_dir" gpu_0/data_0 gpu_0/softmax_1
         python -m onnx2fluid $flags "$fn_model" -t $(dirname "$pb_dir/x").npz
     done
 }

@@ -219,37 +219,35 @@ def _default(prog, op_type, inputs, outputs, attrs,
     fluid_attrs = default_attrs.copy()
     fluid_attrs.update(mapped_attrs) # as new attrs
 
-    val_inps = inputs if input_perm is None else map(lambda i: inputs[i], input_perm)
-    val_outs = outputs if output_perm is None else map(lambda i: outputs[i], output_perm)
-    var_inps = [_make_var_name(val) for val in val_inps]
-    var_outs = [_make_var_name(val) for val in val_outs]
+    val_inps = inputs if input_perm is None else list(map(lambda i: inputs[i], input_perm))
+    val_outs = outputs if output_perm is None else list(map(lambda i: outputs[i], output_perm))
     arg_name = ', name={}'.format(repr(name)) if fill_name_field and name else ''
     arg_attrs = [', {}={}'.format(key, value) for key, value in fluid_attrs.items()]
 
     prog.Code('{} = layers.{}({}{}{})'
-              .format(', '.join(var_outs),
+              .format(', '.join([_make_var_name(val) for val in val_outs]),
                       fluid_op,
-                      ', '.join(var_inps),
+                      ', '.join([_make_var_name(val) for val in val_inps]),
                       ''.join(arg_attrs),
                       arg_name,
                       ))
 
-    for var_out in var_outs:
-        prog.VarDesc(var_out)
+    for val_out in val_outs:
+        prog.VarDesc(val_out)
 
-    # dummy var_out
-    num_vars = len(var_outs)
+    # dummy val_outs
+    num_vals = len(val_outs)
     num_args = len(fluid_output_args)
-    if num_vars < num_args:
-        assert fill_name_field, 'name required to name dummy output variables'
-        for idx_out in range(num_vars, num_args):
-            var_out = _make_var_name(name + '.' + fluid_output_args[idx_out].lower())
-            var_outs.append(var_out)
-            prog.VarDesc(var_out)
+    if num_vals < num_args:
+        assert name, 'name required to name dummy output variables'
+        for idx_out in range(num_vals, num_args):
+            val_out = name + '.' + fluid_output_args[idx_out].lower() # dummy output
+            val_outs.append(val_out)
+            prog.VarDesc(val_out)
 
     prog.OpDesc(fluid_op,
-                (var_inps, *fluid_input_args),
-                (var_outs, *fluid_output_args),
+                (val_inps, *fluid_input_args),
+                (val_outs, *fluid_output_args),
                 fluid_attrs)
 
 
@@ -258,18 +256,16 @@ def _assign(prog, attrs):
     fluid_op = 'assign'
 
     for val_dst, val_src in mapping.items():
-        var_dst = _make_var_name(val_dst)
-        var_src = _make_var_name(val_src)
-        prog.Code('{} = {}'.format(var_dst, var_src))
+        prog.Code('{} = {}'.format(_make_var_name(val_dst), _make_var_name(val_src)))
 #        prog.Code('{} = layers.{}({})'
 #                  .format(var_dst,
 #                          fluid_op,
 #                          var_src,
 #                          ))
-        prog.VarDesc(var_dst)
+        prog.VarDesc(val_dst)
         prog.OpDesc(fluid_op,
-                    ([var_src], 'X'),
-                    ([var_dst], 'Out'),
+                    ([val_src], 'X'),
+                    ([val_dst], 'Out'),
                     dict(),
                     )
 
@@ -285,7 +281,7 @@ def _pad_if_asymmetric(prog, pads, val_name, value_infos): # pads: SSEE
     if symmetric:
         return pads[:ndims], val_name
 
-    val_padded = val_name + '_padded'
+    val_padded = val_name + '_padded' # explicit variable
     prog.Op('', 'Pad',
             [val_name],
             [val_padded], # val
@@ -304,13 +300,10 @@ def _adaptive_pool(prog, pool_type, inputs, outputs, attrs,
     # I/O
     val_x, = inputs
     val_y, = outputs[:1]
-    var_x = _make_var_name(val_x)
-    var_y = _make_var_name(val_y)
 
     has_indices = len(outputs) > 1
     if has_indices:
         val_indices = outputs[1]
-        var_indices = _make_var_name(val_indices)
 
     # interpretation
     pool_size = attrs['output_size'] # required
@@ -326,9 +319,10 @@ def _adaptive_pool(prog, pool_type, inputs, outputs, attrs,
               ', pool_size={}'
               ', pool_type={}'
               '{})'
-              .format(var_y, ', {}'.format(var_indices) if has_indices else '',
+              .format(_make_var_name(val_y),
+                      ', {}'.format(_make_var_name(val_indices)) if has_indices else '',
                       fluid_op,
-                      var_x,
+                      _make_var_name(val_x),
                       # attrs
                       has_indices,
                       pool_size,
@@ -336,12 +330,12 @@ def _adaptive_pool(prog, pool_type, inputs, outputs, attrs,
                       name_attr,
                       ))
     fluid_op = 'pool{}d'.format(poolnd)
-    prog.VarDesc(var_y)
+    prog.VarDesc(val_y)
     if has_indices:
-        prog.VarDesc(var_indices)
+        prog.VarDesc(val_indices)
     prog.OpDesc(fluid_op,
-                ([var_x], 'X'),
-                ([var_y] + ([var_indices] if has_indices else []), 'Out', 'Indices'),
+                ([val_x], 'X'),
+                ([val_y] + ([val_indices] if has_indices else []), 'Out', 'Indices'),
                 dict(global_pooling=False,
                      adaptive=True,
                      exclusive=True,
@@ -357,8 +351,6 @@ def _global_pool(prog, pool_type, inputs, outputs, attrs, value_infos,
     # I/O
     val_x, = inputs
     val_y, = outputs
-    var_x = _make_var_name(val_x)
-    var_y = _make_var_name(val_y)
 
     # interpretation
     input_shape = _shape_or_none(value_infos, val_x)
@@ -377,17 +369,17 @@ def _global_pool(prog, pool_type, inputs, outputs, attrs, value_infos,
     prog.Code('{} = layers.{}({}, global_pooling=True'
               ', pool_type={}'
               '{})'
-              .format(var_y,
+              .format(_make_var_name(val_y),
                       fluid_op,
-                      var_x,
+                       _make_var_name(val_x),
                       # attrs
                       repr(pool_type),
                       name_attr,
                       ))
-    prog.VarDesc(var_y)
+    prog.VarDesc(val_y)
     prog.OpDesc(fluid_op,
-                ([var_x], 'X'),
-                ([var_y], 'Out'),
+                ([val_x], 'X'),
+                ([val_y], 'Out'),
                 dict(global_pooling=True,
                      adaptive=False,
                      pooling_type=pool_type,
@@ -401,12 +393,10 @@ def _pool(prog, pool_type, inputs, outputs, attrs, value_infos,
     # I/O
     val_x, = inputs
     val_y, = outputs[:1]
-    var_y = _make_var_name(val_y)
 
     has_indices = len(outputs) > 1
     if has_indices:
         val_indices = outputs[1]
-        var_indices = _make_var_name(val_indices)
 
     # interpretation
     assert attrs.get('auto_pad', 'NOTSET') == 'NOTSET', 'only auto_pad = NOTSET supported' # optional
@@ -419,7 +409,6 @@ def _pool(prog, pool_type, inputs, outputs, attrs, value_infos,
     ceil_mode = bool(attrs.get('ceil_mode', 0)) # optional
     pads = attrs.get('pads', [0] * (poolnd * 2)) # optional
     paddings, val_x = _pad_if_asymmetric(prog, pads, val_x, value_infos)
-    var_x = _make_var_name(val_x)
     name_attr = ', name={}'.format(repr(name)) if name else ''
 
     # generation
@@ -430,9 +419,10 @@ def _pool(prog, pool_type, inputs, outputs, attrs, value_infos,
               ', pool_padding={}'
               ', ceil_mode={}'
               '{})'
-              .format(var_y, ', {}'.format(var_indices) if has_indices else '',
+              .format(_make_var_name(val_y),
+                      ', {}'.format(_make_var_name(val_indices)) if has_indices else '',
                       fluid_op,
-                      var_x,
+                      _make_var_name(val_x),
                       # attrs
                       pool_size,
                       repr(pool_type),
@@ -441,12 +431,12 @@ def _pool(prog, pool_type, inputs, outputs, attrs, value_infos,
                       ceil_mode,
                       name_attr,
                       ))
-    prog.VarDesc(var_y)
+    prog.VarDesc(val_y)
     if has_indices:
-        prog.VarDesc(var_indices)
+        prog.VarDesc(val_indices)
     prog.OpDesc(fluid_op,
-                ([var_x], 'X'),
-                ([var_y] + ([var_indices] if has_indices else []), 'Out', 'Indices'),
+                ([val_x], 'X'),
+                ([val_y] + ([val_indices] if has_indices else []), 'Out', 'Indices'),
                 dict(global_pooling=False,
                      adaptive=False,
                      exclusive=True,
@@ -464,9 +454,6 @@ def _roi_pool(prog, fluid_op, inputs, outputs, attrs, value_infos, name):
     # I/O
     val_x, val_rois = inputs
     val_y, = outputs
-    var_x = _make_var_name(val_x)
-    var_rois = _make_var_name(val_rois)
-    var_y = _make_var_name(val_y)
 
     # interpretation
     spatial_scale = attrs['spatial_scale'] # required
@@ -493,22 +480,22 @@ def _roi_pool(prog, fluid_op, inputs, outputs, attrs, value_infos, name):
               ', pooled_height={}'
               ', pooled_width={}'
               '{})'
-              .format(var_y,
+              .format(_make_var_name(val_y),
                       fluid_op,
-                      val_x, var_rois,
+                      _make_var_name(val_x), _make_var_name(val_rois),
                       # attrs
                       spatial_scale,
                       pooled_height,
                       pooled_width,
                       feature_attr,
                       ))
-    prog.VarDesc(var_y)
+    prog.VarDesc(val_y)
     if is_max_pool:
-        var_argmax = _make_var_name(name + '.argmax') # implicit variable
-        prog.VarDesc(var_argmax)
+        val_argmax = name + '.argmax' # dummy output
+        prog.VarDesc(val_argmax)
     prog.OpDesc(fluid_op,
-                ([var_x, var_rois], 'X', 'Rois'),
-                ([var_y] + ([var_argmax] if is_max_pool else []), 'Out', 'Argmax'),
+                ([val_x, val_rois], 'X', 'Rois'),
+                ([val_y] + ([val_argmax] if is_max_pool else []), 'Out', 'Argmax'),
                 od_attrs,
                 )
 
@@ -572,8 +559,6 @@ def AffineGrid(
     # I/O
     val_theta, = inputs
     val_grid, = outputs
-    var_theta = _make_var_name(val_theta)
-    var_grid = _make_var_name(val_grid)
 
     # interpretation
     fluid_op = 'affine_grid'
@@ -584,17 +569,17 @@ def AffineGrid(
     prog.Code('{} = layers.{}({}'
               ', out_shape={}'
               '{})'
-              .format(var_grid,
+              .format(_make_var_name(val_grid),
                       fluid_op,
-                      var_theta,
+                      _make_var_name(val_theta),
                       # attrs
                       size,
                       name_attr,
                       ))
-    prog.VarDesc(var_grid)
+    prog.VarDesc(val_grid)
     prog.OpDesc(fluid_op,
-                ([var_theta], 'Theta'),
-                ([var_grid], 'Output'),
+                ([val_theta], 'Theta'),
+                ([val_grid], 'Output'),
                 dict(output_shape=size), # f**k you API
                 )
 
@@ -610,8 +595,6 @@ def BatchNormalization(
     # I/O
     val_x, val_scale, val_b, val_mean, val_var = inputs
     val_y, = outputs
-    var_x = _make_var_name(val_x)
-    var_y = _make_var_name(val_y)
 
     # interpretation
     fluid_op = 'batch_norm'
@@ -620,10 +603,10 @@ def BatchNormalization(
     name_attr = ', name={}'.format(repr(name)) if name else ''
     if embed_params:
         assert name != ''
-        var_scale = '{}.w_0'.format(name)
-        var_b = '{}.b_0'.format(name)
-        var_mean = '{}.w_1'.format(name)
-        var_var = '{}.w_2'.format(name)
+        var_scale = name + '.w_0'
+        var_b = name + '.b_0'
+        var_mean = name + '.w_1'
+        var_var = name + '.w_2'
         value_infos[val_scale].setdefault('embeded_as', []).append(var_scale)
         value_infos[val_b].setdefault('embeded_as', []).append(var_b)
         value_infos[val_mean].setdefault('embeded_as', []).append(var_mean)
@@ -637,29 +620,29 @@ def BatchNormalization(
         param_attr = (', param_attr={}, bias_attr={}'
                       ', moving_mean_name={}, moving_variance_name={}'
                       ).format(repr(var_scale), repr(var_b), repr(var_mean), repr(var_var))
-    var_saved_mean = '{}.saved_mean'.format(name) # dropped var
-    var_saved_variance = '{}.saved_variance'.format(name) # dropped var
 
     # generationvalue_infos
     prog.Code('{} = layers.{}({}, is_test=True, data_layout="NCHW"'
               ', momentum={}'
               ', epsilon={}'
               '{}{})'
-              .format(var_y,
+              .format(_make_var_name(val_y),
                       fluid_op,
-                      var_x,
+                      _make_var_name(val_x),
                       # attrs
                       momentum,
                       epsilon,
                       param_attr, name_attr,
                       ))
-    prog.VarDesc(var_y)
-    prog.VarDesc(var_saved_mean)
-    prog.VarDesc(var_saved_variance)
+    val_saved_mean = name + '.saved_mean' # dummy output
+    val_saved_variance = name + '.saved_variance' # dummy output
+    prog.VarDesc(val_y)
+    prog.VarDesc(val_saved_mean)
+    prog.VarDesc(val_saved_variance)
     prog.OpDesc(fluid_op,
-                ([var_x, var_scale, var_b, var_mean, var_var],
+                ([val_x, var_scale, var_b, var_mean, var_var],
                  'X', 'Scale', 'Bias', 'Mean', 'Variance'),
-                ([var_y, var_mean, var_saved_mean, var_saved_variance, var_var],
+                ([val_y, var_mean, val_saved_mean, val_saved_variance, var_var],
                  'Y', 'MeanOut', 'SavedMean', 'SavedVariance', 'VarianceOut'),
                 dict(is_test=1,
                      data_layout='NCHW',
@@ -679,8 +662,6 @@ def Cast(
     # I/O
     val_input, = inputs
     val_output, = outputs
-    var_input = _make_var_name(val_input)
-    var_output = _make_var_name(val_output)
 
     # interpretation
     dtype = attrs['to'] # required
@@ -696,16 +677,16 @@ def Cast(
     prog.Code('{} = layers.{}({}'
               ', dtype={}'
               ')'
-              .format(var_output,
+              .format(_make_var_name(val_output),
                       fluid_op,
-                      var_input,
+                      _make_var_name(val_input),
                       # attrs
                       repr(dtype.name),
                       ))
-    prog.VarDesc(var_output)
+    prog.VarDesc(val_output)
     prog.OpDesc(fluid_op,
-                ([var_input], 'X'),
-                ([var_output], 'Out'),
+                ([val_input], 'X'),
+                ([val_output], 'Out'),
                 dict(in_dtype=prog.Dtype(_dtype(value_infos, val_input)), # holy, required
                      out_dtype=prog.Dtype(dtype),
                      )
@@ -723,8 +704,6 @@ def Concat(
 
     # I/O
     val_concat_result, = outputs
-    var_inps = [_make_var_name(val) for val in inputs]
-    var_concat_result = _make_var_name(val_concat_result)
 
     # interpretation
     fluid_op = 'concat'
@@ -735,17 +714,17 @@ def Concat(
     prog.Code('{} = layers.{}({}'
               ', axis={}'
               '{})'
-              .format(var_concat_result,
+              .format(_make_var_name(val_concat_result),
                       fluid_op,
-                      '[' + ', '.join(var_inps) + ']',
+                      '[' + ', '.join([_make_var_name(val) for val in inputs]) + ']',
                       # attrs
                       axis,
                       name_attr,
                       ))
-    prog.VarDesc(var_concat_result)
+    prog.VarDesc(val_concat_result)
     prog.OpDesc(fluid_op,
-                (var_inps, *(['X'] * len(var_inps))),
-                ([var_concat_result], 'Out'),
+                (inputs, *(['X'] * len(inputs))),
+                ([val_concat_result], 'Out'),
                 dict(axis=axis),
                 )
 
@@ -760,7 +739,6 @@ def Constant(
     # I/O
     assert len(inputs) == 0
     val_output, = outputs
-    var_output = _make_var_name(val_output)
 
     # interpretation
     value = attrs['value'] # required
@@ -769,7 +747,7 @@ def Constant(
     if output_dtype:
         assert dtype == output_dtype, 'tensor dtype unmatches storage dtype'
 #    dtype = np.dtype('float32') # HINT: force to float32
-    shape = attrs.get('shape', None) # additional, maybe var_name
+    shape = attrs.get('shape', None) #
     if shape is None:
         shape = _shape_or_none(value_infos, val_output)
     if shape is None:
@@ -782,18 +760,27 @@ def Constant(
 
     # generation
     if value.size == 1: # scalar
+        value = value[0]
         fluid_op = 'fill_constant'
         prog.Code('{} = layers.{}(shape={}, dtype={}, value={})'
-                  .format(var_output,
+                  .format(_make_var_name(val_output),
                           fluid_op,
                           # attrs
-                          shape, repr(dtype.name), value[0], # shape can be list or var_name
+                          shape, repr(dtype.name), value,
                           ))
-        value_infos[val_output]['const_value'] = value[0]
-        prog.VarDesc(var_output)
+        value_infos[val_output]['const_value'] = value
+        prog.VarDesc(val_output)
+        prog.OpDesc(fluid_op,
+                    ([], ),
+                    ([val_output], 'Out'),
+                    dict(shape=shape,
+                         dtype=dtype.name,
+                         value=value,
+                         ),
+                    )
     else: # list parameter -> const_value
-        prog.Code('{} = {}'
-                  .format(var_output,
+        prog.Code('# {} = {} # passed directly as literal'
+                  .format(_make_var_name(val_output),
                           value.tolist(),
                           ))
         value_infos[val_output]['const_value'] = value.tolist()
@@ -817,8 +804,9 @@ def ConstantOfShape(
                                'this is not supported')
     dtype = attrs['value'].dtype
     attrs = attrs.copy()
-    attrs.update(dict(shape=shape, dtype=dtype)) # pass var_name
+    attrs.update(dict(shape=shape, dtype=dtype)) # pass const
 
+    prog.Code('# shape:{}={} # const as literal'.format(_make_var_name(val_shape), shape))
     prog.Op('', 'Constant',
             [],
             outputs, # val
@@ -838,7 +826,6 @@ def Conv(
     # I/O
     val_x, val_w = inputs[:2]
     val_y, = outputs
-    var_y = _make_var_name(val_y)
 
     has_bias = len(inputs) == 3
     if has_bias:
@@ -858,14 +845,13 @@ def Conv(
     dilations = attrs.get('dilations', [1] * convnd) # optional
     pads = attrs.get('pads', [0] * (convnd * 2)) # optional
     paddings, val_x = _pad_if_asymmetric(prog, pads, val_x, value_infos)
-    var_x = _make_var_name(val_x)
     name_attr = ', name={}'.format(repr(name)) if name else ''
     if embed_params:
         assert name != ''
-        var_w = '{}.w_0'.format(name)
+        var_w = name + '.w_0'
         value_infos[val_w].setdefault('embeded_as', []).append(var_w)
         if has_bias:
-            var_b = '{}.b_0'.format(name)
+            var_b = name + '.b_0'
             value_infos[val_b].setdefault('embeded_as', []).append(var_b)
             param_attr = ''
         else:
@@ -885,9 +871,9 @@ def Conv(
               ', dilation={}'
               ', groups={}'
               '{}{})'
-              .format(var_y,
+              .format(_make_var_name(val_y),
                       fluid_op,
-                      var_x,
+                      _make_var_name(val_x),
                       # attrs
                       num_out_channels,
                       kernel_shape,
@@ -897,27 +883,27 @@ def Conv(
                       num_groups,
                       param_attr, name_attr,
                       ))
-    var_conv = _make_var_name(name + '.conv') # hidden variable
+    val_conv = name + '.conv' # hidden variable
     prog.OpDesc(fluid_op,
-                ([var_x, var_w], 'Input', 'Filter'), # , 'Bias', 'ResidualData'
-                ([var_conv if has_bias else var_y], 'Output'),
+                ([val_x, var_w], 'Input', 'Filter'), # , 'Bias', 'ResidualData'
+                ([val_conv if has_bias else val_y], 'Output'),
                 dict(strides=strides,
                      paddings=paddings,
                      dilations=dilations,
                      groups=num_groups,
                      ))
     if has_bias:
-        prog.VarDesc(var_conv)
+        prog.VarDesc(val_conv)
         prog.IntermediateOp(
                 '', 'Add',
-                [var_conv, var_b],
-                [var_y], # var
+                [val_conv, var_b],
+                [val_y],
                 dict(axis=1),
                 value_infos=value_infos,
                 name=(name + '.bias'),
                 )
     else:
-        prog.VarDesc(var_y)
+        prog.VarDesc(val_y)
 
 
 def ConvTranspose(
@@ -931,7 +917,6 @@ def ConvTranspose(
     # I/O
     val_x, val_w = inputs[:2]
     val_y, = outputs
-    var_y = _make_var_name(val_y)
 
     has_bias = len(inputs) == 3
     if has_bias:
@@ -952,14 +937,13 @@ def ConvTranspose(
     dilations = attrs.get('dilations', [1] * convnd) # optional
     pads = attrs.get('pads', [0] * (convnd * 2)) # optional
     paddings, val_x = _pad_if_asymmetric(prog, pads, val_x, value_infos)
-    var_x = _make_var_name(val_x)
     name_attr = ', name={}'.format(repr(name)) if name else ''
     if embed_params:
         assert name != ''
-        var_w = '{}.w_0'.format(name)
+        var_w = name + '.w_0'
         value_infos[val_w].setdefault('embeded_as', []).append(var_w)
         if has_bias:
-            var_b = '{}.b_0'.format(name)
+            var_b = name + '.b_0'
             value_infos[val_b].setdefault('embeded_as', []).append(var_b)
             param_attr = ''
         else:
@@ -980,9 +964,9 @@ def ConvTranspose(
               ', dilation={}'
               ', groups={}'
               '{}{})'
-              .format(var_y,
+              .format( _make_var_name(val_y),
                       fluid_op,
-                      var_x,
+                      _make_var_name(val_x),
                       # attrs
                       num_out_channels,
                       kernel_shape,
@@ -992,10 +976,10 @@ def ConvTranspose(
                       num_groups,
                       param_attr, name_attr,
                       ))
-    var_conv = _make_var_name(name + '.conv') # hidden variable
+    val_conv = name + '.conv' # hidden variable
     prog.OpDesc(fluid_op,
-                ([var_x, var_w], 'Input', 'Filter'), # , 'Bias', 'ResidualData'
-                ([var_conv if has_bias else var_y], 'Output'),
+                ([val_x, var_w], 'Input', 'Filter'), # , 'Bias', 'ResidualData'
+                ([val_conv if has_bias else val_y], 'Output'),
                 dict(strides=strides,
                      paddings=paddings,
                      dilations=dilations,
@@ -1003,17 +987,17 @@ def ConvTranspose(
                      groups=num_groups,
                      ))
     if has_bias:
-        prog.VarDesc(var_conv)
+        prog.VarDesc(val_conv)
         prog.IntermediateOp(
                 '', 'Add',
-                [var_conv, var_b],
-                [var_y], # var
+                [val_conv, var_b],
+                [val_y], # var
                 dict(axis=1),
                 value_infos=value_infos,
                 name=(name + '.bias'),
                 )
     else:
-        prog.VarDesc(var_y)
+        prog.VarDesc(val_y)
 
 
 # should not appear
@@ -1227,8 +1211,6 @@ def Pad(
     # I/O
     val_data, = inputs
     val_output, = outputs
-    var_data = _make_var_name(val_data)
-    var_output = _make_var_name(val_output)
 
     # interpretation
     pads = attrs['pads'] # required
@@ -1262,18 +1244,18 @@ def Pad(
               ', paddings={}'
               ', pad_value={}'
               '{}{})'
-              .format(var_output,
+              .format(_make_var_name(val_output),
                       fluid_op,
-                      var_data,
+                      _make_var_name(val_data),
                       # attrs
                       paddings,
                       value,
                       pad2d_attr, name_attr,
                       ))
-    prog.VarDesc(var_output)
+    prog.VarDesc(val_output)
     prog.OpDesc(fluid_op,
-                ([var_data], 'X'),
-                ([var_output], 'Out'),
+                ([val_data], 'X'),
+                ([val_output], 'Out'),
                 od_attrs,
                 )
 
@@ -1289,8 +1271,6 @@ def PRelu(
     # I/O
     val_x, val_slope = inputs
     val_y, = outputs
-    var_x = _make_var_name(val_x)
-    var_y = _make_var_name(val_y)
 
     # interpretation
     fluid_op = 'prelu'
@@ -1307,16 +1287,16 @@ def PRelu(
     # generation
     prog.Code('{} = layers.{}({}, mode="all"'
               '{}{})'
-              .format(var_y,
+              .format(_make_var_name(val_y),
                       fluid_op,
-                      var_x,
+                      _make_var_name(val_x),
                       # attrs
                       param_attr, name_attr,
                       ))
-    prog.VarDesc(var_y)
+    prog.VarDesc(val_y)
     prog.OpDesc(fluid_op,
-                ([var_x], 'X'),
-                ([var_y], 'Out'),
+                ([val_x], 'X'),
+                ([val_y], 'Out'),
                 dict(mode='all'),
                 )
 
@@ -1341,37 +1321,35 @@ def Reshape(
     # I/O
     val_data, val_shape = inputs
     val_reshaped, = outputs
-    var_data = _make_var_name(val_data)
-    var_reshaped = _make_var_name(val_reshaped)
 
     # interpretation
-    var_shape = _make_var_name(val_shape) # for code
     shape = _const_weight_or_none(value_infos, val_shape)
     is_const_shape = shape and 'const_value' in value_infos[val_shape]
     if shape is None:
-        shape = _shape_or_none(value_infos, var_reshaped)
+        shape = _shape_or_none(value_infos, val_shape)
     assert shape is not None, ('given shape is neither const value nor deductible from output, '
                                'this is not supported')
     fluid_op = 'reshape'
     name_attr = ', name={}'.format(repr(name)) if name else ''
 
     # generation
+    prog.Code('# shape:{}={} # const as literal'.format(_make_var_name(val_shape), shape))
     if is_const_shape:
         prog.Code('{} = layers.{}({}'
                   ', shape={}'
                   '{})'
-                  .format(var_reshaped,
+                  .format(_make_var_name(val_reshaped),
                           fluid_op,
-                          var_data,
+                          _make_var_name(val_data),
                           # attrs
-                          var_shape,
+                          shape,
                           name_attr,
                           ))
     else:
-        var_shape_int32 = var_shape + '_int32'
+        val_shape_int32 = val_shape + '_int32' # explicit variable
         prog.Op('', 'Cast',
-                [var_shape],
-                [var_shape_int32], # var
+                [val_shape],
+                [val_shape_int32], # var
                 dict(to=np.dtype('int32')), # use np.dtype
                 value_infos=value_infos,
                 name=(name + '_cast'),
@@ -1380,28 +1358,28 @@ def Reshape(
                   ', shape={}'
                   ', actual_shape={}'
                   '{})'
-                  .format(var_reshaped,
+                  .format(_make_var_name(val_reshaped),
                           fluid_op,
-                          var_data,
+                          _make_var_name(val_data),
                           # attrs
                           shape,
-                          var_shape_int32,
+                          _make_var_name(val_shape_int32),
                           name_attr,
                           ))
     fluid_op = 'reshape2'
-    var_xshape = _make_var_name(name + '.xshape')
-    prog.VarDesc(var_reshaped)
-    prog.VarDesc(var_xshape)
+    val_xshape = name + '.xshape' # dummy output
+    prog.VarDesc(val_reshaped)
+    prog.VarDesc(val_xshape)
     if is_const_shape:
         prog.OpDesc(fluid_op,
-                    ([var_data], 'X'),
-                    ([var_reshaped, var_xshape], 'Out', 'XShape'),
+                    ([val_data], 'X'),
+                    ([val_reshaped, val_xshape], 'Out', 'XShape'),
                     dict(shape=shape),
                     )
     else:
         prog.OpDesc(fluid_op,
-                    ([var_data, var_shape_int32], 'X', 'Shape'),
-                    ([var_reshaped, var_xshape], 'Out', 'XShape'),
+                    ([val_data, val_shape_int32], 'X', 'Shape'),
+                    ([val_reshaped, val_xshape], 'Out', 'XShape'),
                     dict(shape=shape),
                     )
 
@@ -1416,8 +1394,6 @@ def Slice(
     # I/O
     val_data, = inputs
     val_output, = outputs
-    var_data = _make_var_name(val_data)
-    var_output = _make_var_name(val_output)
 
     # interpretation
     fluid_op = 'slice'
@@ -1446,18 +1422,18 @@ def Slice(
               ', starts={}'
               ', ends={}'
               ')'
-              .format(var_output,
+              .format(_make_var_name(val_output),
                       fluid_op,
-                      var_data,
+                      _make_var_name(val_data),
                       # attrs
                       axes,
                       starts,
                       ends,
                       ))
-    prog.VarDesc(var_output)
+    prog.VarDesc(val_output)
     prog.OpDesc(fluid_op,
-                ([var_data], 'X'),
-                ([var_output], 'Out'),
+                ([val_data], 'X'),
+                ([val_output], 'Out'),
                 dict(axes=axes,
                      starts=starts,
                      ends=ends,
@@ -1474,23 +1450,21 @@ def Sum(
 
     # I/O
     val_sum, = outputs
-    var_inps = [_make_var_name(val) for val in inputs]
-    var_sum = _make_var_name(val_sum)
 
     # interpretation
     fluid_op = 'sums'
 
     # generation
     prog.Code('{} = layers.{}({})'
-              .format(var_sum,
+              .format(_make_var_name(val_sum),
                       fluid_op,
-                      '[' + ', '.join(var_inps) + ']',
+                      '[' + ', '.join([_make_var_name(val) for val in inputs]) + ']',
                       # attrs
                       ))
-    prog.VarDesc(var_sum)
+    prog.VarDesc(val_sum)
     prog.OpDesc(fluid_op,
-                (var_inps, *(['X'] * len(var_inps))),
-                ([var_sum], 'Out'),
+                (inputs, *(['X'] * len(inputs))),
+                ([val_sum], 'Out'),
                 dict(),
                 )
 
@@ -1506,8 +1480,6 @@ def Tile(
     # I/O
     val_input, val_repeats = inputs
     val_output, = outputs
-    var_input = _make_var_name(val_input)
-    var_output = _make_var_name(val_output)
 
     # interpretation
     repeats = _const_weight_or_none(value_infos, val_repeats)
@@ -1516,23 +1488,24 @@ def Tile(
     name_attr = ', name={}'.format(repr(name)) if name else ''
 
     # generation
+    prog.Code('# repeats:{}={} # const as literal'.format(_make_var_name(val_repeats), repeats))
     prog.Code('{} = layers.{}({}'
               ', expand_times={}'
               '{})'
               ' # {} = {}'
-              .format(var_output,
+              .format(_make_var_name(val_output),
                       fluid_op,
-                      var_input,
+                      _make_var_name(val_input),
                       # attrs
                       repeats,
                       name_attr,
                       # comment
                       _make_var_name(val_repeats), repeats,
                       ))
-    prog.VarDesc(var_output)
+    prog.VarDesc(val_output)
     prog.OpDesc(fluid_op,
-                ([var_input], 'X'),
-                ([var_output], 'Out'),
+                ([val_input], 'X'),
+                ([val_output], 'Out'),
                 dict(expand_times=repeats),
                 )
 
@@ -1580,8 +1553,6 @@ def Split(
 
     # I/O
     val_input, = inputs
-    var_outs = [_make_var_name(val) for val in outputs]
-    var_input = _make_var_name(val_input)
 
     # interpretation
     fluid_op = 'split'
@@ -1593,19 +1564,19 @@ def Split(
     prog.Code('{} = layers.{}({}, {}'
               ', dim={}'
               '{})'
-              .format(', '.join(var_outs),
+              .format(', '.join([_make_var_name(val) for val in outputs]),
                       fluid_op,
-                      var_input,
+                      _make_var_name(val_input),
                       split,
                       # attrs
                       axis,
                       name_attr,
                       ))
-    for var_out in var_outs:
-        prog.VarDesc(var_out)
+    for val_out in outputs:
+        prog.VarDesc(val_out)
     prog.OpDesc(fluid_op,
-                (var_input, 'X'),
-                ([var_outs], *(['Out'] * len(var_outs))),
+                (val_input, 'X'),
+                (outputs, *(['Out'] * len(outputs))),
                 dict(axis=axis,
                      sections=split,
                      ),

@@ -87,11 +87,11 @@ def validate(fluid_model_filename, golden_data_filename,
     # load data
     logger.info('using golden data %s', golden_data_filename)
     if golden_data_filename.endswith('.npz'):
-        test_data = np.load(golden_data_filename)
+        test_data = np.load(golden_data_filename, encoding='bytes')
         input_data = test_data['inputs'].tolist()
         output_data = test_data['outputs'].tolist()
     else:
-        test_data = np.load(golden_data_filename).tolist()
+        test_data = np.load(golden_data_filename, encoding='bytes').tolist()
         input_data = test_data['inputs']
         output_data = test_data['outputs']
     input_data = _flatten_dict(input_data)

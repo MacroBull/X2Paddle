@@ -15,7 +15,7 @@ fn = sys.argv[1]
 input_names = sys.argv[2].split(':')
 output_name = sys.argv[3].split(':')
 
-data = np.load(fn)
+data = np.load(fn, encoding='bytes')
 input_data = data['inputs']
 output_data = data['outputs']
 

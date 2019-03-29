@@ -12,36 +12,34 @@ import logging
 import numpy as np
 import onnx
 
-from collections import OrderedDict as Dict  # as default dict
+from collections import OrderedDict as Dict # as default dict
 from onnx.helper import get_attribute_value, make_attribute
 from onnx.mapping import TENSOR_TYPE_TO_NP_TYPE
 from onnx.numpy_helper import to_array
 from onnx.shape_inference import infer_shapes
+
 
 logger = logging.getLogger(__name__)
 
 __all__ = [
     'print_pb_structure',
     'build_value_refs',
-    'node_attrs',
-    'node_topo',
-    'node_iter',
-    'tensor_shape',
-    'graph_ops',
-    'graph_weights',
+    'node_attrs', 'node_topo', 'node_iter',
+    'tensor_dtype', 'tensor_shape',
+    'graph_ops', 'graph_weights',
     'inferred_model_value_info',
     'optimize_model_skip_op_for_inference',
     'optimize_model_strip_initializer',
-    'optimize_model_cast',
-    'optimize_model_slice',
+    'optimize_model_cast', 'optimize_model_slice',
 ]
 
-ONNX_INT_MAX = 2**63 - 1
+ONNX_INT_MAX = 2 ** 63 - 1
 
 DEFAULT_OP_DOMAIN = 'ai.onnx'
 
 
-def print_pb_structure(message, loop_iterative=False, depth=0):
+def print_pb_structure(message,
+                       loop_iterative=False, depth=0):
     """
     print pb fields in its structure
     """
@@ -49,17 +47,14 @@ def print_pb_structure(message, loop_iterative=False, depth=0):
     if hasattr(message, 'DESCRIPTOR') and hasattr(message.DESCRIPTOR, 'fields'):
         for field in message.DESCRIPTOR.fields:
             print('\t' * depth + '-', field.name)
-            print_pb_structure(
-                getattr(message, field.name),
-                loop_iterative=loop_iterative,
-                depth=(depth + 1))
+            print_pb_structure(getattr(message, field.name),
+                               loop_iterative=loop_iterative, depth=(depth + 1))
 
-    if loop_iterative and hasattr(message, 'MergeFrom') and hasattr(
-            message, '__len__'):
+    if loop_iterative and  hasattr(message, 'MergeFrom') and hasattr(message, '__len__'):
         for idx, item in enumerate(message):
             print('\t' * depth + '-', idx)
-            print_pb_structure(
-                item, loop_iterative=loop_iterative, depth=(depth + 1))
+            print_pb_structure(item,
+                               loop_iterative=loop_iterative, depth=(depth + 1))
 
 
 def build_value_refs(nodes):
@@ -85,20 +80,18 @@ def get_attribute_value2(attr):
     if attr.type == onnx.AttributeProto.TENSOR:
         dtype = np.dtype(TENSOR_TYPE_TO_NP_TYPE[attr.t.data_type])
         data = attr.t.raw_data
-        value = np.frombuffer(
-            data, dtype=dtype, count=(len(data) // dtype.itemsize))
+        value = np.frombuffer(data, dtype=dtype, count=(len(data) // dtype.itemsize))
     else:
         value = get_attribute_value(attr)
     return value
 
 
-def node_attrs(node):
+def tensor_dtype(tensor):
     """
-    convert ONNX node attributes to dict
+    get ONNX tensor in np.dtype
     """
 
-    return {attr.name: get_attribute_value2(attr)
-            for attr in node.attribute}  # dict
+    return TENSOR_TYPE_TO_NP_TYPE[tensor.type.tensor_type.elem_type]
 
 
 def tensor_shape(tensor):
@@ -107,6 +100,14 @@ def tensor_shape(tensor):
     """
 
     return [dim.dim_value for dim in tensor.type.tensor_type.shape.dim]
+
+
+def node_attrs(node):
+    """
+    convert ONNX node attributes to dict
+    """
+
+    return {attr.name: get_attribute_value2(attr) for attr in node.attribute} # dict
 
 
 def node_topo(nodes, topo='default'):
@@ -144,7 +145,7 @@ def node_topo(nodes, topo='default'):
                 for next_idx in input_refs[val_name]:
                     node_in_degrees[next_idx] -= 1
                     if node_in_degrees[next_idx] == 0:
-                        queue.insert(0, next_idx)  # make it lazy
+                        queue.insert(0, next_idx) # make it lazy
         return node_topo
 
     if topo == 'backward':
@@ -169,13 +170,14 @@ def node_topo(nodes, topo='default'):
                 for next_idx in output_refs[val_name]:
                     node_out_degrees[next_idx] -= 1
                     if node_out_degrees[next_idx] == 0:
-                        queue.insert(0, next_idx)  # make it lazy
+                        queue.insert(0, next_idx) # make it lazy
         return node_topo
 
     raise ValueError('unkown given topo: {}'.format(topo))
 
 
-def node_iter(nodes, indices=None):
+def node_iter(nodes,
+              indices=None):
     """
     generator for ONNX node graph with given indices
     """
@@ -200,7 +202,8 @@ def node_iter(nodes, indices=None):
         yield name, domain, op_type, inputs, outputs, attrs
 
 
-def graph_ops(graph, topo='default'):
+def graph_ops(graph,
+              topo='default'):
     """
     generator for ONNX node graph with given topology
     """
@@ -237,24 +240,24 @@ def inferred_model_value_info(model):
     value_info = Dict()
     for item in graph.value_info:
         value_info[item.name] = dict(
-            dtype=TENSOR_TYPE_TO_NP_TYPE[item.type.tensor_type.elem_type],
-            shape=tensor_shape(item),
-            external=False,
-        )
+                dtype=tensor_dtype(item),
+                shape=tensor_shape(item),
+                external=False,
+                )
     for item in graph.input:
         assert item.name not in value_info
         value_info[item.name] = dict(
-            dtype=TENSOR_TYPE_TO_NP_TYPE[item.type.tensor_type.elem_type],
-            shape=tensor_shape(item),
-            external=True,
-        )
+                dtype=tensor_dtype(item),
+                shape=tensor_shape(item),
+                external=True,
+                )
     for item in graph.output:
-        #        assert item.name not in value_info, 'bypass-model not supported'
+#        assert item.name not in value_info, 'bypass-model not supported'
         value_info[item.name] = dict(
-            dtype=TENSOR_TYPE_TO_NP_TYPE[item.type.tensor_type.elem_type],
-            shape=tensor_shape(item),
-            external=True,
-        )
+                dtype=tensor_dtype(item),
+                shape=tensor_shape(item),
+                external=True,
+                )
     return value_info
 
 
@@ -288,7 +291,9 @@ def skip_node_backward(nodes, src_input_name, dst_output_name, output_refs):
     return processed
 
 
-def optimize_model_skip_op_for_inference(model, op_list=None):
+def optimize_model_skip_op_for_inference(
+        model,
+        op_list=None):
     """
     skip ops can be bypassed for inference
     """
@@ -300,42 +305,38 @@ def optimize_model_skip_op_for_inference(model, op_list=None):
 
     ret = type(model)()
     ret.CopyFrom(model)
-    ret.graph.ClearField(
-        'value_info')  # WORKAROUND: onnx do not drop old value_info
+    ret.graph.ClearField('value_info') # WORKAROUND: onnx do not drop old value_info
     ret_nodes = ret.graph.node
     nodes_to_remove = []
     for node_idx, node in enumerate(nodes):
-        if not (node.domain == DEFAULT_OP_DOMAIN or node.domain == ''):
+        if not(node.domain == DEFAULT_OP_DOMAIN or node.domain == ''):
             continue
         op_type = node.op_type
-        if not (op_type in op_list):
+        if not(op_type in op_list):
             continue
 
         if op_type in ['Dropout']:
             input_name = node.input[0]
             output_name = node.output[0]
-        elif not (len(node.input) == 1 and len(node.output) == 1):
-            logger.warning(
-                'currently only 1-input-1-output op supported, skip required %d: %s',
-                node_idx, node.op_type)
+        elif not(len(node.input) == 1 and len(node.output) == 1):
+            logger.warning('currently only 1-input-1-output op supported, skip required %d: %s',
+                           node_idx, node.op_type)
             continue
         else:
             input_name = node.input[0]
             output_name = node.output[0]
 
         if output_name in input_refs:
-            processed = skip_node_forward(ret_nodes, output_name, input_name,
-                                          input_refs)
+            processed = skip_node_forward(ret_nodes, output_name, input_name, input_refs)
         elif input_name in output_refs:
-            processed = skip_node_backward(ret_nodes, input_name, output_name,
-                                           output_refs)
+            processed = skip_node_backward(ret_nodes, input_name, output_name, output_refs)
         else:
             processed = -1
 
         if processed > 0:
             nodes_to_remove.append(node_idx)
-            logger.debug('skip op %d: %s -> %s -> %s', node_idx, input_name,
-                         node.op_type, output_name)
+            logger.debug('skip op %d: %s -> %s -> %s',
+                         node_idx, input_name, node.op_type, output_name)
         elif processed == 0:
             logger.warning('weird, no node processed')
         else:
@@ -349,7 +350,8 @@ def optimize_model_skip_op_for_inference(model, op_list=None):
     return ret
 
 
-def optimize_model_strip_initializer(model, keep_input_only=True):
+def optimize_model_strip_initializer(model,
+                                     keep_input_only=True):
     """
     strip weights for inference
     """
@@ -360,8 +362,7 @@ def optimize_model_strip_initializer(model, keep_input_only=True):
 
     ret = type(model)()
     ret.CopyFrom(model)
-    ret.graph.ClearField(
-        'value_info')  # WORKAROUND: onnx do not drop old value_info
+    ret.graph.ClearField('value_info') # WORKAROUND: onnx do not drop old value_info
 
     # strip initializers
     ret.graph.ClearField('initializer')
@@ -373,9 +374,9 @@ def optimize_model_strip_initializer(model, keep_input_only=True):
         elif not keep_input_only and name in output_refs:
             ret_initializers.add().CopyFrom(initializer)
         else:
-            logger.debug('initializer %s(%s[%d]) stripped', name,
-                         TENSOR_TYPE_TO_NP_TYPE[initializer.data_type],
-                         len(initializer.raw_data))
+            dtype = TENSOR_TYPE_TO_NP_TYPE[initializer.data_type]
+            logger.debug('initializer %s(%s[%d]) stripped',
+                         name, dtype, len(initializer.raw_data) // dtype.itemsize)
 
     # strip inputs
     ret.graph.ClearField('input')
@@ -385,10 +386,8 @@ def optimize_model_strip_initializer(model, keep_input_only=True):
         if name in input_refs or name in out_names:
             ret_inputs.add().CopyFrom(item)
         else:
-            logger.debug(
-                'input %s(%s%s) stripped', name,
-                TENSOR_TYPE_TO_NP_TYPE[item.type.tensor_type.elem_type],
-                tensor_shape(item))
+            logger.debug('input %s(%s%s) stripped',
+                         name, tensor_dtype(item), tensor_shape(item))
     return ret
 
 
@@ -403,19 +402,18 @@ def optimize_model_cast(model):
 
     ret = type(model)()
     ret.CopyFrom(model)
-    ret.graph.ClearField(
-        'value_info')  # WORKAROUND: onnx do not drop old value_info
+    ret.graph.ClearField('value_info') # WORKAROUND: onnx do not drop old value_info
     ret_nodes = ret.graph.node
     nodes_to_remove = []
     for node_idx, node in enumerate(nodes):
-        if not (node.domain == DEFAULT_OP_DOMAIN or node.domain == ''):
+        if not(node.domain == DEFAULT_OP_DOMAIN or node.domain == ''):
             continue
-        if not (node.op_type == 'Cast'):
+        if not(node.op_type == 'Cast'):
             continue
         attrs = node_attrs(node)
         output_dtype = TENSOR_TYPE_TO_NP_TYPE[attrs['to']]
         input_name = node.input[0]
-        info = value_info.get('input_name', None)  # relax for un-inferrable
+        info = value_info.get('input_name', None) # relax for un-inferrable
         if info is None:
             continue
         input_dtype = info.get('dtype', None)
@@ -424,23 +422,21 @@ def optimize_model_cast(model):
 
         output_name = node.output[0]
         if output_name in input_refs:
-            processed = skip_node_forward(ret_nodes, output_name, input_name,
-                                          input_refs)
+            processed = skip_node_forward(ret_nodes, output_name, input_name, input_refs)
         elif input_name in output_refs:
-            processed = skip_node_backward(ret_nodes, input_name, output_name,
-                                           output_refs)
+            processed = skip_node_backward(ret_nodes, input_name, output_name, output_refs)
         else:
             processed = -1
 
         if processed > 0:
             nodes_to_remove.append(node_idx)
-            logger.debug('skip %s: %s -> %s Cast op', node.name, input_dtype,
-                         output_dtype)
+            logger.debug('skip %s: %s -> %s Cast op',
+                         node.name, input_dtype, output_dtype)
         elif processed == 0:
             logger.warning('weird, no node processed')
         else:
-            logger.debug('keep standalone %s: %s -> %s Cast op', node.name,
-                         input_dtype, output_dtype)
+            logger.debug('keep standalone %s: %s -> %s Cast op',
+                         node.name, input_dtype, output_dtype)
 
     nodes_to_remove.sort(reverse=True)
     for node_idx in nodes_to_remove:
@@ -461,14 +457,13 @@ def optimize_model_slice(model):
         chain = []
         while True:
             node = nodes[node_idx]
-            if not (node.domain == DEFAULT_OP_DOMAIN or node.domain == ''):
+            if not(node.domain == DEFAULT_OP_DOMAIN or node.domain == ''):
                 return chain
             if not node.op_type == 'Slice':
                 return chain
             chain.append(node_idx)
             output_name = node.output[0]
-            if output_name not in input_refs or len(
-                    input_refs[output_name]) != 1:
+            if output_name not in input_refs or len(input_refs[output_name]) != 1:
                 return chain
             node_idx = list(input_refs[output_name])[0]
 
@@ -478,8 +473,7 @@ def optimize_model_slice(model):
         for slice_node_idx in slice_chain:
             node = nodes[slice_node_idx]
             attrs = node_attrs(node)
-            for axis, start, end in zip(attrs['axes'], attrs['starts'],
-                                        attrs['ends']):
+            for axis, start, end in zip(attrs['axes'], attrs['starts'], attrs['ends']):
                 if start == 0 and end == ONNX_INT_MAX:
                     continue
                 if axis in merged_slice:
@@ -491,8 +485,7 @@ def optimize_model_slice(model):
 
     ret = type(model)()
     ret.CopyFrom(model)
-    ret.graph.ClearField(
-        'value_info')  # WORKAROUND: onnx do not drop old value_info
+    ret.graph.ClearField('value_info') # WORKAROUND: onnx do not drop old value_info
     ret_nodes = ret.graph.node
     nodes_to_remove = []
     for node_idx in range(len(nodes)):
@@ -500,7 +493,7 @@ def optimize_model_slice(model):
         if len(slice_chain) == 0:
             continue
         merged_slice = _merge_slice(slice_chain)
-        if len(merged_slice) > 0 and len(slice_chain) == 1:  # no need to merge
+        if len(merged_slice) > 0 and len(slice_chain) == 1: # no need to merge
             continue
 
         attrs = dict(axes=[], starts=[], ends=[])
@@ -513,50 +506,42 @@ def optimize_model_slice(model):
         input_name = first_node.input[0]
         output_name = last_node.output[0]
         processed = -1
-        if output_name in input_refs:  # 0, [1...]
-            new_input_name = first_node.output[0] if len(
-                merged_slice) > 0 else input_name
-            processed = skip_node_forward(ret_nodes, output_name,
-                                          new_input_name, input_refs)
+        if output_name in input_refs: # 0, [1...]
+            new_input_name = first_node.output[0] if len(merged_slice) > 0 else input_name
+            processed = skip_node_forward(ret_nodes, output_name, new_input_name, input_refs)
             if processed > 0:
                 if len(merged_slice) > 0:
                     remain_idx = slice_chain[0]
                     remove_chain = slice_chain[1:]
                     slice_node = ret_nodes[remain_idx]
                     for attr in slice_node.attribute:
-                        attr.CopyFrom(
-                            make_attribute(attr.name, attrs[attr.name]))
+                        attr.CopyFrom(make_attribute(attr.name, attrs[attr.name]))
                     logger.debug('merged slice chain %s -> %s%s -> %s',
-                                 input_name, remain_idx, remove_chain,
-                                 output_name)
+                                 input_name, remain_idx, remove_chain, output_name)
                 else:
                     remove_chain = slice_chain
 
         if processed < 0 and input_name in output_refs:
-            new_output_name = last_node.input[0] if len(
-                merged_slice) > 0 else output_name
-            processed = skip_node_backward(ret_nodes, input_name,
-                                           new_output_name, output_refs)
+            new_output_name = last_node.input[0] if len(merged_slice) > 0 else output_name
+            processed = skip_node_backward(ret_nodes, input_name, new_output_name, output_refs)
             if processed > 0:
                 if len(merged_slice) > 0:
                     remain_idx = slice_chain[-1]
                     remove_chain = slice_chain[:-1]
                     slice_node = ret_nodes[remain_idx]
                     for attr in slice_node.attribute:
-                        attr.CopyFrom(
-                            make_attribute(attr.name, attrs[attr.name]))
+                        attr.CopyFrom(make_attribute(attr.name, attrs[attr.name]))
                     logger.debug('merged slice chain %s -> %s%s -> %s',
-                                 input_name, remove_chain, remain_idx,
-                                 output_name)
+                                 input_name, remove_chain, remain_idx, output_name)
                 else:
                     remove_chain = slice_chain
 
         if processed > 0:
             nodes_to_remove.extend(remove_chain)
             if len(merged_slice) == 0:
-                logger.debug('skip slice chain %s -> %s -> %s', input_name,
-                             slice_chain, output_name)
-        elif processed < 0:  # NEVERFIX: not merge standalone slice chain
+                logger.debug('skip slice chain %s -> %s -> %s',
+                             input_name, slice_chain, output_name)
+        elif processed < 0: # NEVERFIX: not merge standalone slice chain
             logger.debug('keep standalone slice chain %s -> %s -> %s',
                          input_name, slice_chain, output_name)
 
@@ -569,10 +554,9 @@ def optimize_model_slice(model):
 
 if __name__ == '__main__':
     logging.basicConfig(
-        format=
-        '[%(levelname)8s]%(name)s::%(funcName)s:%(lineno)04d: %(message)s',
-        level=logging.DEBUG,
-    )
+            format='[%(levelname)8s]%(name)s::%(funcName)s:%(lineno)04d: %(message)s',
+            level=logging.DEBUG,
+            )
 
     from onnx.checker import check_model
     from onnx.utils import polish_model

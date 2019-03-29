@@ -18,7 +18,9 @@ import torch.nn.functional as F
 
 from onnx2fluid.torch_export_helper import export_onnx_with_validation
 
+
 idx = 0
+
 
 ######### example: RNN ########
 #
@@ -42,6 +44,7 @@ idx = 0
 #                            ['x'], ['y'],
 #                            verbose=True, training=False)
 
+
 ######### example: random ########
 #
 #class Model(nn.Module):
@@ -63,8 +66,8 @@ idx = 0
 #                            ['x'], ['y'],
 #                            verbose=True, training=False)
 
-######## example: fc ########
 
+######## example: fc ########
 
 class Model(nn.Module):
     def __init__(self):
@@ -82,11 +85,12 @@ xb = torch.rand((2, 3))
 yp = model(xb)
 idx += 1
 print('index: ', idx)
-export_onnx_with_validation(
-    model, (xb, ), 't' + str(idx), ['x'], ['y'], verbose=True, training=False)
+export_onnx_with_validation(model, (xb, ), 't' + str(idx),
+                            ['x'], ['y'],
+                            verbose=True, training=False)
+
 
 ######## example: compare ########
-
 
 class Model(nn.Module):
     def __init__(self):
@@ -106,14 +110,11 @@ xb1 = torch.rand((2, 3))
 ya, yb, yc = model(xb0, xb1)
 idx += 1
 print('index: ', idx)
-export_onnx_with_validation(
-    model, (xb0, xb1),
-    't' + str(idx), ['x0', 'x1'], ['ya', 'yb', 'yc'],
-    verbose=True,
-    training=False)
+export_onnx_with_validation(model, (xb0, xb1), 't' + str(idx),
+                            ['x0', 'x1'], ['ya', 'yb', 'yc'],
+                            verbose=True, training=False)
 
 ######## example: affine_grid ########
-
 
 class Model(nn.Module):
     def __init__(self):
@@ -129,14 +130,12 @@ theta = torch.rand((2, 2, 3))
 grid = model(theta)
 idx += 1
 print('index: ', idx)
-export_onnx_with_validation(
-    model, (theta, ),
-    't' + str(idx), ['theta'], ['grid'],
-    verbose=True,
-    training=False)
+export_onnx_with_validation(model, (theta, ), 't' + str(idx),
+                            ['theta'], ['grid'],
+                            verbose=True, training=False)
+
 
 ######## example: conv2d_transpose ########
-
 
 class Model(nn.Module):
     def __init__(self):
@@ -156,11 +155,11 @@ xb = torch.rand((2, 3, 4, 5))
 yp = model(xb)
 idx += 1
 print('index: ', idx)
-export_onnx_with_validation(
-    model, (xb, ), 't' + str(idx), ['x'], ['y'], verbose=True, training=False)
+export_onnx_with_validation(model, (xb, ), 't' + str(idx),
+                            ['x'], ['y'],
+                            verbose=True, training=False)
 
 ######## example: conv2d ########
-
 
 class Model(nn.Module):
     def __init__(self):
@@ -182,8 +181,10 @@ xb = torch.rand((2, 3, 4, 5))
 yp = model(xb)
 idx += 1
 print('index: ', idx)
-export_onnx_with_validation(
-    model, (xb, ), 't' + str(idx), ['x'], ['y'], verbose=True, training=False)
+export_onnx_with_validation(model, (xb, ), 't' + str(idx),
+                            ['x'], ['y'],
+                            verbose=True, training=False)
+
 
 ######### example: conv1d ########
 #
@@ -209,7 +210,6 @@ export_onnx_with_validation(
 
 ######## example: empty ########
 
-
 class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
@@ -223,5 +223,6 @@ xb = torch.rand((2, 3))
 yp = model(xb)
 idx += 1
 print('index: ', idx)
-export_onnx_with_validation(
-    model, (xb, ), 't' + str(idx), ['y'], ['y'], verbose=True, training=False)
+export_onnx_with_validation(model, (xb, ), 't' + str(idx),
+                            ['y'], ['y'],
+                            verbose=True, training=False)

@@ -8,22 +8,20 @@ Created on Mon Feb 25 09:50:35 2019
 
 from __future__ import division
 
-# import logging, shutil
-import logging
-import shutil
+import logging, shutil
+#import logging
+#import shutil
+
 
 __all__ = [
     'convert',
 ]
 
 
-def convert(onnx_model_filename,
-            save_dir,
-            model_basename='model.py',
-            model_func_name='inference',
+def convert(onnx_model_filename, save_dir,
+            model_basename='model.py', model_func_name='inference',
             embed_params=False,
-            onnx_opset_version=9,
-            onnx_opset_pedantic=True,
+            onnx_opset_version=9, onnx_opset_pedantic=True, onnx_skip_version_conversion=False,
             debug=False):
     """
     convert an ONNX model to Paddle fluid Python code and desc pb
@@ -60,12 +58,12 @@ def convert(onnx_model_filename,
     try:
         logger.info('checking model ...')
         check_model(onnx_model)
-        logger.debug('using opset version: %d', onnx_opset_version)
-        if onnx_opset_pedantic:  # WORKAROUND: RuntimeError: No Adapter For OP
+        if onnx_skip_version_conversion: # WORKAROUND: RuntimeError: No Adapter For OP
+            logger.debug('assumed opset version: %d', onnx_opset_version)
+            logger.warning('opset conversion skipped for onnx_opset_pedantic is OFF')
+        else:
+            logger.debug('using opset version: %d', onnx_opset_version)
             onnx_model = convert_version(onnx_model, onnx_opset_version)
-        else:  # TODO: add new argument for this option
-            logger.warning(
-                'opset conversion skipped for onnx_opset_pedantic is OFF')
         onnx_model = polish_model(onnx_model)
     except ValidationError as e:
         if onnx_opset_pedantic:
@@ -93,13 +91,13 @@ def convert(onnx_model_filename,
         onnx.save(model, debug_model_filename + '.optimized_and_inffered.onnx')
 #        onnx.save(model, '/tmp/export/optimized_and_inffered.onnx')
 
-# I/O instances
+    # I/O instances
     onnx_graph = onnx_model.graph
     fluid_program = Program()
     fluid_writer = Writer()
 
     # model components
-    #    graph_name = onnx_graph.name
+#    graph_name = onnx_graph.name
     graph_inputs = [value.name for value in onnx_graph.input]
     graph_outputs = [value.name for value in onnx_graph.output]
     graph_params = []
@@ -110,33 +108,25 @@ def convert(onnx_model_filename,
     for name, weight in graph_weights(onnx_graph):
         value_info = graph_value_infos[name]
         value_info['embeded_as'] = []
-        value_info['get_weight'] = (lambda w: lambda: w.tolist())(
-            weight)  # lazy getter
+        value_info['get_weight'] = (lambda w: lambda: w.tolist())(weight) # lazy getter
 
     logger.info('conversion started')
     # op set conversion
-    #    topo = 'backward' if embed_params else 'forward'
+#    topo = 'backward' if embed_params else 'forward'
     topo = 'forward'
-    for name, domain, op_type, inputs, outputs, attrs in graph_ops(
-            onnx_graph, topo=topo):
+    for name, domain, op_type, inputs, outputs, attrs in graph_ops(onnx_graph, topo=topo):
         logger.debug('translating op %s %s::%s ...', name, domain, op_type)
         if domain == DEFAULT_OP_DOMAIN:
             domain = ''
         try:
-            fluid_writer.emit_op(
-                fluid_program,
-                name,
-                domain,
-                op_type,
-                inputs,
-                outputs,
-                attrs,
-                graph_value_infos,
-                embed_params=embed_params,
-            )
+            fluid_writer.emit_op(fluid_program, name, domain, op_type,
+                                 inputs, outputs, attrs,
+                                 graph_value_infos,
+                                 embed_params=embed_params,
+                                 )
         except BaseException as e:
-            logger.fatal('conversion failed for:\n\t%s -> %s::%s -> %s', inputs,
-                         domain, op_type, outputs)
+            logger.fatal('conversion failed for:\n\t%s -> %s::%s -> %s',
+                         inputs, domain, op_type, outputs)
             raise e
     op_codes = fluid_program.codes
     fluid_program.codes = []
@@ -149,21 +139,15 @@ def convert(onnx_model_filename,
         var_names = value_info.get('embeded_as', [])
         if var_names:
             if len(var_names) > 1:
-                logger.info(
-                    'weight %s is shared between ops, more disk space will be consumed',
-                    name)
-            logger.debug(
-                'saving weight %s with size of %d, in %d bytes, as %s ...',
-                name, weight.size, weight.nbytes, var_names)
-            for var_name in var_names:  # multiple references
-                fluid_writer.write_weight(
-                    weight, shutil.os.path.join(save_dir, var_name))
+                logger.info('weight %s is shared between ops, more disk space will be consumed', name)
+            logger.debug('saving weight %s(%s[%d], %dB) as %s ...',
+                         name, weight.dtype, weight.size, weight.nbytes, var_names)
+            for var_name in var_names: # multiple references
+                fluid_writer.write_weight(weight, shutil.os.path.join(save_dir, var_name))
         else:
-            logger.debug(
-                'saving weight %s with size of %d, in %d bytes, to %s ...',
-                name, weight.size, weight.nbytes, make_var_name(name))
-            fluid_writer.write_weight(
-                weight, shutil.os.path.join(save_dir, make_var_name(name)))
+            logger.debug('saving weight %s(%s[%d], %dB) to %s ...',
+                         name, weight.dtype, weight.size, weight.nbytes, make_var_name(name))
+            fluid_writer.write_weight(weight, shutil.os.path.join(save_dir, make_var_name(name)))
         fluid_writer.emit_param(fluid_program, name, value_info)
     param_codes = fluid_program.codes
     fluid_program.codes = []
@@ -176,9 +160,7 @@ def convert(onnx_model_filename,
             value_info = graph_value_infos[name]
             assert value_info['external']
             external_inputs.append(name)
-    fluid_writer.emit_inputs(
-        fluid_program, external_inputs, graph_value_infos,
-        remove_batch=False)  # TODO:
+    fluid_writer.emit_inputs(fluid_program, external_inputs, graph_value_infos, remove_batch=False) # TODO:
     input_codes = fluid_program.codes
     fluid_program.codes = []
     logger.info('%d inputs converted', len(external_inputs))
@@ -191,77 +173,61 @@ def convert(onnx_model_filename,
             assert value_info['external']
             external_outputs.append(name)
     fluid_writer.emit_outputs(fluid_program, external_outputs)
-    output_codes = [''] + fluid_program.codes  # add an empty line
+    output_codes = [''] + fluid_program.codes # add an empty line
     fluid_program.codes = []
     logger.info('%d outputs converted', len(external_outputs))
 
     # code generation
-    header_codes = fluid_writer.header_code(
-        model_func_name, 'From: {}'.format(onnx_model_filename))
+    header_codes = fluid_writer.header_code(model_func_name, 'From: {}'.format(onnx_model_filename))
     code_filename = shutil.os.path.join(save_dir, model_basename)
-    fluid_writer.write_code_file(code_filename, header_codes, input_codes,
-                                 param_codes, op_codes, output_codes)
-    logger.info('code saved to %s, factory function: %s', code_filename,
-                model_func_name)
+    fluid_writer.write_code_file(code_filename,
+                                 header_codes,
+                                 input_codes,
+                                 param_codes,
+                                 op_codes,
+                                 output_codes)
+    logger.info('code saved to %s, factory function: %s', code_filename, model_func_name)
 
     # desc generation
     desc_filename = shutil.os.path.join(save_dir, '__model__')
-    fluid_writer.write_desc_file(
-        desc_filename,
-        op_descs=fluid_program.op_descs,
-        var_descs=fluid_program.var_descs,
-    )
+    fluid_writer.write_desc_file(desc_filename,
+                                  op_descs=fluid_program.op_descs,
+                                  var_descs=fluid_program.var_descs,
+                                  )
     logger.info('program saved to %s', desc_filename)
 
     logger.info('conversion finished')
-
-
 #    globals().update(locals())
+
 
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description='onnx2fluid.convert',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    parser.add_argument(
-        'model',
-        nargs=1,
-        help='path to model.onnx',
-    )
-    parser.add_argument(
-        '--debug',
-        '-d',
-        action='store_true',
-        help='enable debug logging and checking',
-    )
-    parser.add_argument(
-        '--output_dir',
-        '-o',
-        type=str,
-        default='',
-        help='output directory',
-    )
-    parser.add_argument(
-        '--embed_params',
-        '-e',
-        action='store_true',
-        help='try to embed parameters for trainable Paddle fluid layers',
-    )
-    parser.add_argument(
-        '--pedantic',
-        action='store_true',
-        default=True,
-        help='accept and convert only standard ONNX opset',
-    )
-    parser.add_argument(
-        '--no-pedantic',
-        '-x',
-        action='store_false',
-        dest='pedantic',
-        help='process non-standard ONNX ops, this may lead to fails',
-    )
+    parser = argparse.ArgumentParser(description='onnx2fluid.convert',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                     )
+    parser.add_argument('model', nargs=1,
+                        help='path to model.onnx',
+                        )
+    parser.add_argument('--debug', '-d', action='store_true',
+                        help='enable debug logging and checking',
+                        )
+    parser.add_argument('--output_dir', '-o', type=str, default='',
+                        help='output directory',
+                        )
+    parser.add_argument('--embed_params', '-e', action='store_true',
+                        help='try to embed parameters for trainable Paddle fluid layers',
+                        )
+    parser.add_argument('--pedantic', action='store_true', default=True,
+                        help='accept and convert only standard ONNX opset',
+                        )
+    parser.add_argument('--no-pedantic', '-x', action='store_false',
+                        dest='pedantic',
+                        help='process non-standard ONNX ops, this may lead to fails',
+                        )
+    parser.add_argument('--skip-version-conversion', '-y', action='store_true', default=False,
+                        help='skip ONNX op version conversion, workaround for RumtimeErrors',
+                        )
     args = parser.parse_args()
 
     logging_format = '[%(levelname)8s]%(name)s::%(funcName)s:%(lineno)04d: %(message)s'
@@ -273,10 +239,10 @@ if __name__ == '__main__':
     save_dir = args.output_dir
     embed_params = args.embed_params
     pedantic = args.pedantic
+    skip_version_conversion = args.skip_version_conversion
 
-    convert(
-        model_filename,
-        save_dir,
-        embed_params=embed_params,
-        onnx_opset_pedantic=pedantic,
-        debug=debug)
+    convert(model_filename, save_dir,
+            embed_params=embed_params,
+            onnx_opset_pedantic=pedantic,
+            onnx_skip_version_conversion=skip_version_conversion,
+            debug=debug)

@@ -36,7 +36,7 @@ def _ensure_list(obj):
 
 def validate(fluid_model_filename, golden_data_filename,
              model_func_name='inference',
-             precision=1e-4,
+             decimal=3,
              save_inference_model=False):
     """
     inferece the converted Paddle fluid model, validate with given golden data
@@ -96,7 +96,8 @@ def validate(fluid_model_filename, golden_data_filename,
         output_data = test_data['outputs']
     input_data = _flatten_dict(input_data)
     output_data = _flatten_dict(output_data)
-    logger.info('found %d I/O golden data, starting test ...', len(test_data))
+    logger.info('found %d I/O golden data, starting test ...',
+                len(input_data) + len(output_data))
 
     # DEBUG: reload test for python code
     if basename.endswith('.py') and save_inference_model:
@@ -115,7 +116,7 @@ def validate(fluid_model_filename, golden_data_filename,
     for (name, truth), output in zip(output_data.items(), outputs):
         logger.info('testing output {} ...'.format(name))
         try:
-            np.testing.assert_almost_equal(output, truth, decimal=precision)
+            np.testing.assert_almost_equal(output, truth, decimal=decimal)
         except AssertionError as e:
             passed = False
             logger.error('failed: %s\n', e)
@@ -143,7 +144,7 @@ if __name__ == '__main__':
     parser.add_argument('--test_data', '-t', type=str,
                         help='I/O golden data for validation, e.g. test.npy, test.npz',
                         )
-    parser.add_argument('--precision', '-p', type=int, default=4,
+    parser.add_argument('--precision', '-p', type=int, default=3,
                         help='assertion decimal for validation',
                         )
     args = parser.parse_args()
@@ -156,7 +157,7 @@ if __name__ == '__main__':
     debug = args.debug
     fluid_model_filename = args.model[0]
     golden_data_filename = args.test_data
-    precision = args.precision
+    decimal = args.precision
 
     validate(fluid_model_filename, golden_data_filename,
-             precision=precision, save_inference_model=debug)
+             decimal=decimal, save_inference_model=debug)

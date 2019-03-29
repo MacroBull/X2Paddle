@@ -3,7 +3,9 @@
 # setopt SH_WORD_SPLIT # if zsh
 
 base_url="https://s3.amazonaws.com/download.onnx/models/opset_9/"
-flags="-e -o /tmp/export/"
+convert_flags="-e -o /tmp/export/"
+validate_flags1="/tmp/export/model.py"
+validate_flags2="/tmp/export/__model__"
 
 # alias http_get="wget -c" # if no aria2
 alias http_get="aria2c -c -s8 -x8"
@@ -19,17 +21,20 @@ bvlc_alexnet()
     echo "extracting ..."
     tar xf "$fn_tar"
 
+    python -m onnx2fluid $convert_flags "$fn_model"
     for npz in "$bn_tar"/*.npz
     do
         echo "converting $npz ..."
         python convert_data_npz_0.py "$npz" data_0 prob_1
-        python -m onnx2fluid $flags "$fn_model" -t "$npz"
+        python -m onnx2fluid.validation $validate_flags1 -t "$npz"
+        python -m onnx2fluid.validation $validate_flags2 -t "$npz"
     done
     for pb_dir in "$bn_tar"/*/
     do
         echo "converting $pb_dir ..."
         python convert_data_pb_0.py "$pb_dir" data_0 prob_1
-        python -m onnx2fluid $flags "$fn_model" -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags1 -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags2 -t $(dirname "$pb_dir/x").npz
     done
 }
 
@@ -43,11 +48,13 @@ bvlc_googlenet()
     echo "extracting ..."
     tar xf "$fn_tar"
 
+    python -m onnx2fluid $convert_flags "$fn_model"
     for pb_dir in "$bn_tar"/*/
     do
         echo "converting $pb_dir"
         python convert_data_pb_0.py "$pb_dir" data_0 prob_1
-        python -m onnx2fluid $flags "$fn_model" -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags1 -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags2 -t $(dirname "$pb_dir/x").npz
     done
 }
 
@@ -61,11 +68,13 @@ bvlc_reference_caffenet()
     echo "extracting ..."
     tar xf "$fn_tar"
 
+    python -m onnx2fluid $convert_flags "$fn_model"
     for pb_dir in "$bn_tar"/*/
     do
         echo "converting $pb_dir"
         python convert_data_pb_0.py "$pb_dir" data_0 prob_1
-        python -m onnx2fluid $flags "$fn_model" -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags1 -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags2 -t $(dirname "$pb_dir/x").npz
     done
 }
 
@@ -79,11 +88,13 @@ bvlc_reference_rcnn_ilsvrc13()
     echo "extracting ..."
     tar xf "$fn_tar"
 
+    python -m onnx2fluid $convert_flags "$fn_model"
     for pb_dir in "$bn_tar"/*/
     do
         echo "converting $pb_dir"
         python convert_data_pb_0.py "$pb_dir" data_0 fc-rcnn_1
-        python -m onnx2fluid $flags "$fn_model" -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags1 -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags2 -t $(dirname "$pb_dir/x").npz
     done
 }
 
@@ -97,18 +108,20 @@ inception_v1()
     echo "extracting ..."
     tar xf "$fn_tar"
 
+    python -m onnx2fluid $convert_flags "$fn_model"
     for npz in "$bn_tar"/*.npz
     do
         echo "converting $npz ..."
         python convert_data_npz_0.py "$npz" data_0 prob_1
-        python -m onnx2fluid $flags "$fn_model" -t "$npz"
+        python -m onnx2fluid.validation $validate_flags1 -t "$npz"
+        python -m onnx2fluid.validation $validate_flags2 -t "$npz"
     done
-
     for pb_dir in "$bn_tar"/*/
     do
-        echo "converting $pb_dir"
+        echo "converting $pb_dir ..."
         python convert_data_pb_0.py "$pb_dir" data_0 prob_1
-        python -m onnx2fluid $flags "$fn_model" -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags1 -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags2 -t $(dirname "$pb_dir/x").npz
     done
 }
 
@@ -122,18 +135,20 @@ inception_v2()
     echo "extracting ..."
     tar xf "$fn_tar"
 
+    python -m onnx2fluid $convert_flags "$fn_model"
     for npz in "$bn_tar"/*.npz
     do
         echo "converting $npz ..."
         python convert_data_npz_0.py "$npz" data_0 prob_1
-        python -m onnx2fluid $flags "$fn_model" -t "$npz"
+        python -m onnx2fluid.validation $validate_flags1 -t "$npz"
+        python -m onnx2fluid.validation $validate_flags2 -t "$npz"
     done
-
     for pb_dir in "$bn_tar"/*/
     do
-        echo "converting $pb_dir"
+        echo "converting $pb_dir ..."
         python convert_data_pb_0.py "$pb_dir" data_0 prob_1
-        python -m onnx2fluid $flags "$fn_model" -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags1 -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags2 -t $(dirname "$pb_dir/x").npz
     done
 }
 
@@ -147,18 +162,20 @@ resnet50()
     echo "extracting ..."
     tar xf "$fn_tar"
 
+    python -m onnx2fluid $convert_flags "$fn_model"
     for npz in "$bn_tar"/*.npz
     do
         echo "converting $npz ..."
         python convert_data_npz_0.py "$npz" gpu_0/data_0 gpu_0/softmaxout_1
-        python -m onnx2fluid $flags "$fn_model" -t "$npz"
+        python -m onnx2fluid.validation $validate_flags1 -t "$npz"
+        python -m onnx2fluid.validation $validate_flags2 -t "$npz"
     done
-
     for pb_dir in "$bn_tar"/*/
     do
-        echo "converting $pb_dir"
+        echo "converting $pb_dir ..."
         python convert_data_pb_0.py "$pb_dir" gpu_0/data_0 gpu_0/softmaxout_1
-        python -m onnx2fluid $flags "$fn_model" -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags1 -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags2 -t $(dirname "$pb_dir/x").npz
     done
 }
 
@@ -172,11 +189,13 @@ shufflenet()
     echo "extracting ..."
     tar xf "$fn_tar"
 
+    python -m onnx2fluid $convert_flags "$fn_model"
     for pb_dir in "$bn_tar"/*/
     do
-        echo "converting $pb_dir"
+        echo "converting $pb_dir ..."
         python convert_data_pb_0.py "$pb_dir" gpu_0/data_0 gpu_0/softmaxout_1
-        python -m onnx2fluid $flags "$fn_model" -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags1 -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags2 -t $(dirname "$pb_dir/x").npz
     done
 }
 
@@ -190,11 +209,13 @@ squeezenet()
     echo "extracting ..."
     tar xf "$fn_tar"
 
+    python -m onnx2fluid $convert_flags "$fn_model"
     for pb_dir in "$bn_tar"/*/
     do
         echo "converting $pb_dir"
         python convert_data_pb_0.py "$pb_dir" data_0 softmaxout_1
-        python -m onnx2fluid $flags "$fn_model" -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags1 -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags2 -t $(dirname "$pb_dir/x").npz
     done
 }
 
@@ -208,11 +229,13 @@ tiny_yolov2()
     echo "extracting ..."
     tar xf "$fn_tar"
 
+    python -m onnx2fluid $convert_flags "$fn_model" -xy
     for pb_dir in "$bn_tar"/*/
     do
         echo "converting $pb_dir"
         python convert_data_pb_0.py "$pb_dir" image grid
-        python -m onnx2fluid $flags "$fn_model" -t $(dirname "$pb_dir/x").npz -xy
+        python -m onnx2fluid.validation $validate_flags1 -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags2 -t $(dirname "$pb_dir/x").npz
     done
 }
 
@@ -226,11 +249,13 @@ vgg19()
     echo "extracting ..."
     tar xf "$fn_tar"
 
+    python -m onnx2fluid $convert_flags "$fn_model"
     for pb_dir in "$bn_tar"/*/
     do
         echo "converting $pb_dir"
         python convert_data_pb_0.py "$pb_dir" data_0 prob_1
-        python -m onnx2fluid $flags "$fn_model" -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags1 -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags2 -t $(dirname "$pb_dir/x").npz
     done
 }
 
@@ -244,11 +269,13 @@ zfnet512()
     echo "extracting ..."
     tar xf "$fn_tar"
 
+    python -m onnx2fluid $convert_flags "$fn_model"
     for pb_dir in "$bn_tar"/*/
     do
         echo "converting $pb_dir"
         python convert_data_pb_0.py "$pb_dir" gpu_0/data_0 gpu_0/softmax_1
-        python -m onnx2fluid $flags "$fn_model" -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags1 -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags2 -t $(dirname "$pb_dir/x").npz
     done
 }
 

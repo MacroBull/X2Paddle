@@ -319,7 +319,7 @@ class Writer(object):
         else:
             var_name = make_var_name(name)
             attr_name = make_attr_name(name)
-            prog.Code('# parameter: {}'.format(name))
+            prog.Code('# parameter {}: {}'.format(name, var_name))
             prog.Code('{} = ParamAttr(name={})' # , trainable=True
                       .format(attr_name, repr(var_name)))
             prog.Code('{} = layers.create_parameter(shape={}, dtype={}, name={}, attr={}'
@@ -345,10 +345,10 @@ class Writer(object):
             if remove_batch:
                 shape = shape[1:]
 
-            prog.Code('# input: {}'.format(name))
+            prog.Code('# input {}: {}'.format(name, var_name))
             prog.Code(('{} = layers.data(name={}, shape={}, dtype={}, '
                        'append_batch_size={})' # , stop_gradient=True
-                       ).format(var_name, repr(name),
+                       ).format(var_name, repr(var_name),
                                shape,
                                repr(value_info['dtype'].name),
                                remove_batch,

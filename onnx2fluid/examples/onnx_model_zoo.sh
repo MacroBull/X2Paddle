@@ -8,7 +8,7 @@ validate_flags1="/tmp/export/model.py"
 validate_flags2="/tmp/export/__model__"
 
 # alias http_get="wget -c" # if no aria2
-alias http_get="aria2c -c -s8 -x8"
+alias http_get="proxychains4 aria2c -c -s8 -x8"
 # alias python="python3" # if ...
 
 bvlc_alexnet()
@@ -93,8 +93,8 @@ bvlc_reference_rcnn_ilsvrc13()
     do
         echo "converting $pb_dir"
         python convert_data_pb_0.py "$pb_dir" data_0 fc-rcnn_1
-        python -m onnx2fluid.validation $validate_flags1 -t $(dirname "$pb_dir/x").npz
-        python -m onnx2fluid.validation $validate_flags2 -t $(dirname "$pb_dir/x").npz
+        python -m onnx2fluid.validation $validate_flags1 -t $(dirname "$pb_dir/x").npz -p 0
+        python -m onnx2fluid.validation $validate_flags2 -t $(dirname "$pb_dir/x").npz -p 0
     done
 }
 
@@ -289,6 +289,6 @@ inception_v2
 resnet50
 shufflenet
 squeezenet
-tiny_yolov2 # not supported
+# tiny_yolov2 # not supported
 vgg19
 zfnet512

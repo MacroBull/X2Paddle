@@ -67,7 +67,7 @@ DEFAULT_OP_MAPPING = {
         'Sin': ['sin', ['X'], ['Out']],
         'Squeeze': ['squeeze', ['X'], ['Out']], # attrs bypassed, FIXME: emit squeeze2
         'Softplus': ['softplus', ['X'], ['Out']],
-        'Softmax': ['softmax', ['X'], ['Out'], dict(axis='')],
+        'Softmax': ['softmax', ['X'], ['Out'], dict(axis='')], #
         'Softsign': ['softsign', ['X'], ['Out']],
         'Sqrt': ['sqrt', ['X'], ['Out']],
         'Tanh': ['tanh', ['X'], ['Out']],
@@ -1498,6 +1498,7 @@ def Sum(
                       '[' + ', '.join(var_inps) + ']',
                       # attrs
                       ))
+    fluid_op = 'sum'
     prog.VarDesc(var_sum)
     prog.OpDesc(fluid_op,
                 (var_inps, *(['X'] * len(var_inps))),

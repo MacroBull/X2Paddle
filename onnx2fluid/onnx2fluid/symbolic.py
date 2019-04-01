@@ -67,7 +67,8 @@ DEFAULT_OP_MAPPING = {
         'Sin': ['sin', ['X'], ['Out']],
         'Squeeze': ['squeeze', ['X'], ['Out']], # attrs bypassed, FIXME: emit squeeze2
         'Softplus': ['softplus', ['X'], ['Out']],
-        'Softmax': ['softmax', ['X'], ['Out'], dict(axis='')], #
+        # FIXME: default axis = -1, reshape required before and after
+        'Softmax': ['softmax', ['X'], ['Out'], dict(axis='')],
         'Softsign': ['softsign', ['X'], ['Out']],
         'Sqrt': ['sqrt', ['X'], ['Out']],
         'Tanh': ['tanh', ['X'], ['Out']],
@@ -773,7 +774,7 @@ def Constant(
     if shape is None:
         shape = list(value.shape)
         _logger.warning('in (Constant -> %s): '
-                        'shape of %s not inferred, '
+                        'attribute "shape" of %s not inferred, '
                         'using value as 1-D tensor may lead to fails',
                         outputs,
                         val_output)
@@ -1090,7 +1091,7 @@ def Gemm(
                 if vm_dtype is None:
                     vm_dtype = np.dtype('float32')
                     _logger.warning('in %s(%s -> Gemm -> %s): '
-                                    'beta seems to be an interger, '
+                                    'attribute "beta" seems to be an interger, '
                                     'however dtype can not be inferred, '
                                     'still use float32',
                                     name, inputs, outputs)
@@ -1359,8 +1360,14 @@ def Reshape(
     is_const_shape = shape and 'const_value' in value_infos[val_shape]
     if shape is None:
         shape = _shape_or_none(value_infos, val_reshaped)
-    assert shape is not None, ('given shape is neither const value nor deductible from output, '
-                               'this is not supported')
+#    assert shape is not None, ('given shape is neither const value nor deductible from output, '
+#                               'this is not supported')
+    if shape is None:
+        shape = [1, -1] # who knows
+        _logger.warning('in %s(%s -> Reshape -> %s): '
+                        'input "shape" not inferred, use [1, -1] as dummy value, '
+                        'the behavior of Paddle fluid maybe undefined',
+                        name, inputs, outputs)
     fluid_op = 'reshape'
     name_attr = ', name={}'.format(repr(name)) if name else ''
 

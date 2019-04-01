@@ -36,7 +36,7 @@ def _make_var_name(name):
 data_dir = os.path.dirname(sys.argv[1])
 input_names = sys.argv[2].split(':')
 output_name = sys.argv[3].split(':')
-squeeze_data = len(sys.argv) > 3
+squeeze_data = len(sys.argv) > 4
 
 # Load inputs
 inputs = []

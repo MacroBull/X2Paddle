@@ -250,7 +250,7 @@ class Program(object):
 
     def IntermediateOp(self, domain, op_type, *args, **kwargs):
         """
-        convert an intermediate ONNX op declaring just desc only
+        convert an intermediate ONNX op declaring in desc program only
         """
 
         code_mutable = self.code_mutable

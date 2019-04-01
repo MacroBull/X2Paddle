@@ -41,8 +41,12 @@ def convert(def_path, caffemodel_path, data_output_path, code_output_path,
                 np.save(data_out, data)
         if code_output_path:
             print_stderr('Saving source...')
+            s = sys.version
             with open(code_output_path, 'wb') as src_out:
-                src_out.write(str.encode(transformer.transform_source()))
+                if s.startswith('2'):
+                    src_out.write(transformer.transform_source())
+                else:
+                    src_out.write(str.encode(transformer.transform_source()))
         print_stderr('set env variable before using converted model '\
                 'if used custom_layers:')
         custom_pk_path = os.path.dirname(os.path.abspath(__file__))
@@ -60,7 +64,7 @@ def main():
     """ main
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('def_path', help='Model definition (.prototxt) path')
+    parser.add_argument('--def_path', help='Model definition (.prototxt) path')
     parser.add_argument('--caffemodel', help='Model data (.caffemodel) path')
     parser.add_argument('--data-output-path', help='Converted data output path')
     parser.add_argument(

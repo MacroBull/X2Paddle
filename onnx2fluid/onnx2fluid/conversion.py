@@ -73,6 +73,7 @@ def convert(onnx_model_filename, save_dir,
             logger.warning('the ONNX model sanity checking error is suppressed')
             logger.warning('value_info inferring may be uncompleted')
     # onnx model optimization
+    logger.info('model has %d ops', len(onnx_model.graph.node))
     logger.info('optimizing model ...')
     onnx_model = optimize_model_skip_op_for_inference(onnx_model)
     onnx_model = optimize_model_strip_initializer(onnx_model)
@@ -130,7 +131,7 @@ def convert(onnx_model_filename, save_dir,
             raise e
     op_codes = fluid_program.codes
     fluid_program.codes = []
-    logger.info('%d ops converted', len(fluid_program.op_descs))
+    logger.info('%d ops in, %d ops out', len(onnx_graph.node), len(fluid_program.op_descs))
 
     # weight writer
     for name, weight in graph_weights(onnx_graph):

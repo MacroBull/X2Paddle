@@ -37,6 +37,7 @@ idx = 0
 #
 #
 #model = Model()
+#model.eval()
 #xb = torch.rand((2, 3, 4))
 #yp = model(xb)
 #idx += 1
@@ -59,6 +60,7 @@ idx = 0
 #
 #
 #model = Model()
+#model.eval()
 #xb = torch.rand((2, 3))
 #yp = model(xb)
 #idx += 1
@@ -82,6 +84,7 @@ class Model(nn.Module):
 
 
 model = Model()
+model.eval()
 xb = torch.rand((2, 3))
 yp = model(xb)
 idx += 1
@@ -106,6 +109,7 @@ class Model(nn.Module):
 
 
 model = Model()
+model.eval()
 xb0 = torch.rand((2, 3))
 xb1 = torch.rand((2, 3))
 ya, yb, yc = model(xb0, xb1)
@@ -127,6 +131,7 @@ class Model(nn.Module):
 
 
 model = Model()
+model.eval()
 theta = torch.rand((2, 2, 3))
 grid = model(theta)
 idx += 1
@@ -152,6 +157,7 @@ class Model(nn.Module):
 
 
 model = Model()
+model.eval()
 xb = torch.rand((2, 3, 4, 5))
 yp = model(xb)
 idx += 1
@@ -178,6 +184,7 @@ class Model(nn.Module):
 
 
 model = Model()
+model.eval()
 xb = torch.rand((2, 3, 4, 5))
 yp = model(xb)
 idx += 1
@@ -201,6 +208,7 @@ export_onnx_with_validation(model, (xb, ), prefix + str(idx),
 #
 #
 #model = Model()
+#model.eval()
 #xb = torch.rand((2, 3, 4, 5))
 #yp = model(xb)
 #idx += 1
@@ -220,6 +228,7 @@ class Model(nn.Module):
 
 
 model = Model()
+model.eval()
 xb = torch.rand((2, 3))
 yp = model(xb)
 idx += 1

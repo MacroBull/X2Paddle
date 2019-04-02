@@ -81,7 +81,7 @@ DEFAULT_OP_MAPPING = {
         'And': ['logical_and', ['X', 'Y'], ['Out']],
         'Div': ['elementwise_div', ['X', 'Y'], ['Out'], dict(), dict(axis=-1)],
         'Equal': ['equal', ['X', 'Y'], ['Out'], dict(), dict(), None, None, False],
-        'Greater': ['less_than', ['X', 'Y'], ['Out'], dict(), dict(), None, None, False],
+        'Greater': ['less_than', ['X', 'Y'], ['Out'], dict(), dict(), [1, 0], None, False],
         'Less': ['less_than', ['X', 'Y'], ['Out'], dict(), dict(), None, None, False],
         'MatMul': ['matmul', ['X', 'Y'], ['Out']], # defaults excluded for transpose_x vs transpose_X
         'Max': ['elementwise_max', ['X', 'Y'], ['Out'], dict(), dict(axis=-1)],
@@ -422,14 +422,14 @@ def _pool(prog, pool_type, inputs, outputs, attrs, value_infos,
     name_attr = ', name={}'.format(repr(name)) if name else ''
 
     # generation
-    prog.Code('{}{} = layers.{}({}, exclusive=True'
+    prog.Code('{} = layers.{}({}, exclusive=True'
               ', pool_size={}'
               ', pool_type={}'
               ', pool_stride={}'
               ', pool_padding={}'
               ', ceil_mode={}'
               '{})'
-              .format(var_y, ', {}'.format(var_indices) if has_indices else '',
+              .format(var_y,
                       fluid_op,
                       var_x,
                       # attrs
@@ -780,7 +780,8 @@ def Constant(
                         val_output)
 
     # generation
-    if value.size == 1: # scalar
+    value = value.tolist()
+    if len(value) == 1: # scalar
         value = value[0]
         fluid_op = 'fill_constant'
         prog.Code('{} = layers.{}(shape={}, dtype={}, value={})'
@@ -789,22 +790,19 @@ def Constant(
                           # attrs
                           shape, repr(dtype.name), value,
                           ))
-        value_infos[val_output]['const_value'] = value
         prog.VarDesc(var_output)
         prog.OpDesc(fluid_op,
                     ([], ),
                     ([var_output], 'Out'),
                     dict(shape=shape,
-                         dtype=dtype.name,
+                         dtype=prog.Dtype(dtype),
                          value=value,
                          ),
                     )
     else: # list parameter -> const_value
-        prog.Code('# {} = {} # passed directly as literal'
-                  .format(var_output,
-                          value.tolist(),
-                          ))
-        value_infos[val_output]['const_value'] = value.tolist()
+        prog.Code('# {} = {} # passed directly as literal'.format(var_output, value))
+
+    value_infos[val_output]['const_value'] = value
 
 
 def ConstantOfShape(
@@ -1474,7 +1472,7 @@ def Slice(
                       ))
     prog.VarDesc(var_output)
     prog.OpDesc(fluid_op,
-                ([var_data], 'X'),
+                ([var_data], 'Input'),
                 ([var_output], 'Out'),
                 dict(axes=axes,
                      starts=starts,

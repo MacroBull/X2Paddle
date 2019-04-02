@@ -503,7 +503,7 @@ def _roi_pool(prog, fluid_op, inputs, outputs, attrs, value_infos, name):
                       ))
     prog.VarDesc(var_y)
     if is_max_pool:
-        var_argmax = _make_var_name(name + '.argmax') # implicit variable
+        var_argmax = _make_var_name(name + '.argmax') # hidden variable
         prog.VarDesc(var_argmax)
     prog.OpDesc(fluid_op,
                 ([var_x, var_rois], 'X', 'Rois'),
@@ -639,7 +639,7 @@ def BatchNormalization(
                       ', moving_mean_name={}, moving_variance_name={}'
                       ).format(repr(var_scale), repr(var_b), repr(var_mean), repr(var_var))
 
-    # generationvalue_infos
+    # generation
     prog.Code('{} = layers.{}({}, is_test=True, data_layout="NCHW"'
               ', momentum={}'
               ', epsilon={}'
@@ -1540,15 +1540,12 @@ def Tile(
     prog.Code('{} = layers.{}({}'
               ', expand_times={}'
               '{})'
-              ' # {} = {}'
               .format(var_output,
                       fluid_op,
                       var_input,
                       # attrs
                       repeats,
                       name_attr,
-                      # comment
-                      _make_var_name(val_repeats), repeats,
                       ))
     prog.VarDesc(var_output)
     prog.OpDesc(fluid_op,

@@ -74,13 +74,16 @@ def build_value_refs(nodes):
 
 def get_attribute_value2(attr):
     """
-    get_attribute_value with tensor conversion
+    get_attribute_value enhanced
     """
 
     if attr.type == onnx.AttributeProto.TENSOR:
         dtype = np.dtype(TENSOR_TYPE_TO_NP_TYPE[attr.t.data_type])
         data = attr.t.raw_data
         value = np.frombuffer(data, dtype=dtype, count=(len(data) // dtype.itemsize))
+    elif attr.type == onnx.AttributeProto.STRING:
+        value = attr.s
+        value = value.decode() if isinstance(value, bytes) else value
     else:
         value = get_attribute_value(attr)
     return value

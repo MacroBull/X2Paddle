@@ -53,7 +53,7 @@ parser.add_argument('--skip-version-conversion', '-y', action='store_true', defa
 parser.add_argument('--archive', '-z', nargs='?', type=str, default=None, const='',
                     help='compress outputs to ZIP file if conversion successed',
                     )
-parser.add_argument('--precision', '-p', type=int, default=3,
+parser.add_argument('--precision', '-p', type=float, default=3.,
                     help='assertion decimal for validation',
                     )
 args = parser.parse_args()

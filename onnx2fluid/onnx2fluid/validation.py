@@ -39,7 +39,7 @@ def validate(fluid_model_filename, golden_data_filename,
              decimal=3,
              save_inference_model=False):
     """
-    inferece the converted Paddle fluid model, validate with given golden data
+    inference the converted Paddle fluid model, validate with given golden data
     """
 
     import numpy as np
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     parser.add_argument('--test_data', '-t', type=str,
                         help='I/O golden data for validation, e.g. test.npy, test.npz',
                         )
-    parser.add_argument('--precision', '-p', type=int, default=3,
+    parser.add_argument('--precision', '-p', type=float, default=3.,
                         help='assertion decimal for validation',
                         )
     args = parser.parse_args()

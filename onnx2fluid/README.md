@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
 
-onnx2fluid支持将onnx模型转换为PaddlePaddle模型，并用于预测，用户也可以通过将Pytorch模型导出为ONNX格式模型，再使用onnx2fluid将模型转为PaddlePaddle模型。
+onnx2fluid支持将onnx模型转换为PaddlePaddle模型，并用于预测，用户也可以通过将PyTorch模型导出为ONNX格式模型，再使用onnx2fluid将模型转为PaddlePaddle模型。
 
 ## 环境安装
 
@@ -44,14 +44,26 @@ onnx2fluid sample_1.onnx -t sample_1.npz
 ```shell
 onnx2fluid [-dexy] -o /path/to/export_dir/ /path/of/onnx/model.onnx
 
-optional arguments:
-  --embed_params, -e    try to embed parameters for trainable Paddle fluid layers
-  --no-pedantic, -x     process non-standard ONNX ops
-  --skip-version-conversion, -y
-                        skip ONNX op version conversion, workaround for
-                        RumtimeErrors
-  --archive [ARCHIVE], -z [ARCHIVE]
-                        compress outputs to ZIP file if conversion successed
+python -m onnx2fluid -o paddle_model vgg19/model.onnx
 ```
-
 转换后的PaddlePaddle模型加载可参考文档[加载预测模型](http://www.paddlepaddle.org/documentation/docs/zh/1.3/api_guides/low_level/inference.html#id4)
+
+## 模型测试
+目录[examples](examples)中集成了部分ONNX预训练模型的转换测试
+```shell
+cd examples
+# 测试和验证各onnx模型的转换
+sh onnx_model_zoo.sh
+```
+目前测试脚本中已包含的测试模型如下，  
+1. [bvlc_alexnet](https://s3.amazonaws.com/download.onnx/models/opset_9/bvlc_alexnet.tar.gz)  
+2. [bvlc_googlenet](https://s3.amazonaws.com/download.onnx/models/opset_9/bvlc_googlenet.tar.gz)  
+3. [bvlc_reference_caffenet](https://s3.amazonaws.com/download.onnx/models/opset_9/bvlc_reference_caffenet.tar.gz)  
+4. [bvlc_reference_rcnn_ilsvrc13](https://s3.amazonaws.com/download.onnx/models/opset_9/bvlc_reference_rcnn_ilsvrc13.tar.gz)  
+5. [inception_v1](https://s3.amazonaws.com/download.onnx/models/opset_9/inception_v1.tar.gz)  
+6. [inception_v2](https://s3.amazonaws.com/download.onnx/models/opset_9/inception_v2.tar.gz)  
+7. [resnet50](https://s3.amazonaws.com/download.onnx/models/opset_9/resnet50.tar.gz)  
+8. [shufflenet](https://s3.amazonaws.com/download.onnx/models/opset_9/shufflenet.tar.gz)  
+9. [squeezenet](https://s3.amazonaws.com/download.onnx/models/opset_9/squeezenet.tar.gz)  
+10. [vgg19](https://s3.amazonaws.com/download.onnx/models/opset_9/vgg19.tar.gz)  
+11. [zfnet512](https://s3.amazonaws.com/download.onnx/models/opset_9/zfnet512.tar.gz)

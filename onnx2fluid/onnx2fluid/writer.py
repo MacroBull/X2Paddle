@@ -209,11 +209,9 @@ class Program(object):
         return desc
 
     def VarDesc(self, name,
-                persistable=False, value_info=None, remove_batch=None,
-                dummy_dtype='float32'):
+                persistable=False, value_info=None, remove_batch=None):
         """
         add VarDesc,
-        dummy_dtype: WORKAROUND for Netron viewer
         """
 
         var_desc = framework_pb2.VarDesc()
@@ -231,9 +229,6 @@ class Program(object):
                         remove_batch = value_info.get('remove_batch', not persistable)
                     if remove_batch:
                         tensor_desc.dims[0] = -1
-        else: # REMOVEIT: WORKAROUND: Netron: null.tensor error
-            tensor_desc = var_desc.type.lod_tensor.tensor
-            tensor_desc.data_type = self.Dtype(dummy_dtype) # required
 
         self.var_descs.append(var_desc)
 

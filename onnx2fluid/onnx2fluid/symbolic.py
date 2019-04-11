@@ -254,14 +254,13 @@ def _default(prog, op_type, inputs, outputs, attrs,
                 fluid_attrs)
 
 
-def _assign(prog, attrs):
-    mapping = attrs['mapping'] # additional
+def _assign(prog, mapping):
     fluid_op = 'assign'
 
     for val_dst, val_src in mapping.items():
         var_dst = _make_var_name(val_dst)
         var_src = _make_var_name(val_src)
-        prog.Code('{} = {}'.format(var_dst, var_src))
+        prog.Code('{} = {} # assign'.format(var_dst, var_src))
 #        prog.Code('{} = layers.{}({})'
 #                  .format(var_dst,
 #                          fluid_op,
@@ -1102,7 +1101,7 @@ def ConvTranspose(
 #    val_output, = outputs[:1]
 #
 #    _assign(prog,
-#            dict(mapping=dict([(val_output, val_data)])),
+#            dict([(val_output, val_data)]),
 #            value_infos,
 #            )
 

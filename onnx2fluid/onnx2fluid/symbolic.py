@@ -1766,9 +1766,9 @@ if __name__ == '__main__':
             )
     logger = _logging.getLogger('symbolic_test')
 
-    from writer import Program
+    import numpy as np
 
-    np = _np
+    from onnx2fluid.writer import Program
 
     prog = Program()
     AdaptiveAveragePool(prog, ['X'], ['Y'],

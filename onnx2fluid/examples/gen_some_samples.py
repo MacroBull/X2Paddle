@@ -118,6 +118,7 @@ export_onnx_with_validation(model, (xb0, xb1), prefix + str(idx),
                             ['x0', 'x1'], ['ya', 'yb', 'yc'],
                             verbose=True, training=False)
 
+
 ######## example: affine_grid ########
 
 class Model(nn.Module):
@@ -164,6 +165,7 @@ print('index: ', idx)
 export_onnx_with_validation(model, (xb, ), prefix + str(idx),
                             ['x'], ['y'],
                             verbose=True, training=False)
+
 
 ######## example: conv2d ########
 
@@ -215,6 +217,7 @@ export_onnx_with_validation(model, (xb, ), prefix + str(idx),
 #export_onnx_with_validation(model, (xb, ), prefix + str(idx),
 #                            ['x'], ['y'],
 #                            verbose=True, training=False)
+
 
 ######## example: empty ########
 

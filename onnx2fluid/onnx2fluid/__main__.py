@@ -16,10 +16,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-# import argparse, logging, sys
-import argparse
-import logging
-import sys
+import argparse, logging, sys
 
 
 parser = argparse.ArgumentParser(description='onnx2fluid',
@@ -63,14 +60,6 @@ logging_format = '[%(levelname)8s]%(name)s::%(funcName)s:%(lineno)04d: %(message
 logging_level = logging.DEBUG if args.debug else logging.INFO
 logging.basicConfig(format=logging_format, level=logging_level)
 
-
-try:
-    from . import cmdline
-except ImportError:
-    import cmdline
-
-# imports
-main = cmdline.main
-
+from .cmdline import main
 
 sys.exit(main(**args.__dict__))

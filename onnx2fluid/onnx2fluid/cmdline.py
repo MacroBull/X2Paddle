@@ -17,9 +17,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import logging, shutil, zipfile
-#import logging
-#import shutil
-#import zipfile
 
 
 __all__ = [
@@ -34,13 +31,7 @@ DEFAULT_MODEL_FUNC = 'inference'
 def main(**kwargs):
     """主程序入口"""
 
-    try:
-        from . import conversion
-    except ImportError:
-        import conversion
-
-    # imports
-    convert = conversion.convert
+    from .conversion import convert
 
     logger = logging.getLogger('onnx2fluid')
     debug = kwargs.get('debug', False)
@@ -73,13 +64,7 @@ def main(**kwargs):
     passed = True
     golden_data_filename = kwargs.get('test_data', '')
     if golden_data_filename:
-        try:
-            from . import validation
-        except ImportError:
-            import validation
-
-        # imports
-        validate = validation.validate
+        from .validation import validate
 
         # in fact fluid may not fully clear the context
         # continuous validation may be inaccurate
@@ -126,6 +111,10 @@ if __name__ == '__main__':
             format='[%(levelname)8s]%(name)s::%(funcName)s:%(lineno)04d: %(message)s',
             level=logging.DEBUG,
             )
+
+    del main
+
+    from onnx2fluid.cmdline import main
 
     main(model=['../examples/t1.onnx'],
          output_dir='/tmp/export/',

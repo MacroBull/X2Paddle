@@ -9,27 +9,17 @@ Created on Sun Feb 24 20:44:43 2019
 from __future__ import division
 
 import logging, os
-#import logging
-#import os
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
-try:
-    from . import symbolic
-except ImportError:
-    import symbolic
-
-# imports
-make_var_name = symbolic._make_var_name
+from . import symbolic
+from .symbolic import _make_var_name as make_var_name
 
 try:
     import paddle.fluid.proto.framework_pb2 as framework_pb2
 except ImportError:
-    try:
-        from . import framework_pb2
-    except ImportError:
-        import framework_pb2
+    from . import framework_pb2
 
     logger.warning('importing paddle.fluid.proto.framework_pb2d failed,'
                    'using fallback framework_pb2')

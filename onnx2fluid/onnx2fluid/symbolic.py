@@ -13,7 +13,7 @@ Created on Mon Feb 25 09:33:43 2019
 from __future__ import division
 
 import logging as _logging
-import numpy as np
+import numpy as _np
 
 from collections import OrderedDict as _dict
 from onnx.mapping import TENSOR_TYPE_TO_NP_TYPE
@@ -157,7 +157,7 @@ def _make_var_name(name):
 
 
 def _dtype(value_infos, val_name):
-    return np.dtype(value_infos[val_name]['dtype'])
+    return _np.dtype(value_infos[val_name]['dtype'])
 
 
 def _dtype_or_none(value_infos, val_name):
@@ -166,7 +166,7 @@ def _dtype_or_none(value_infos, val_name):
     value_info = value_infos[val_name]
     if 'dtype' not in value_info:
         return None
-    return np.dtype(value_info['dtype'])
+    return _np.dtype(value_info['dtype'])
 
 
 def _shape(value_infos, val_name):
@@ -747,7 +747,7 @@ def Cast(
 
     # interpretation
     dtype = attrs['to'] # required
-    if not isinstance(dtype, np.dtype): # additional: possible np.dtype
+    if not isinstance(dtype, _np.dtype): # additional: possible np.dtype
         dtype = TENSOR_TYPE_TO_NP_TYPE[dtype]
     output_dtype = _dtype_or_none(value_infos, val_output)
     if output_dtype:
@@ -827,11 +827,11 @@ def Constant(
 
     # interpretation
     value = attrs['value'] # required
-    dtype = np.dtype(value.dtype)
+    dtype = _np.dtype(value.dtype)
     output_dtype = _dtype_or_none(value_infos, val_output)
     if output_dtype:
         assert dtype == output_dtype, 'tensor dtype unmatches storage dtype'
-#    dtype = np.dtype('float32') # HINT: force to float32
+#    dtype = _np.dtype('float32') # HINT: force to float32
     shape = attrs.get('shape', None) #
     if shape is None:
         shape = _shape_or_none(value_infos, val_output)
@@ -1152,13 +1152,13 @@ def Gemm(
             if beta.is_integer():
                 vm_dtype = _dtype_or_none(value_infos, val_c)
                 if vm_dtype is None:
-                    vm_dtype = np.dtype('float32')
+                    vm_dtype = _np.dtype('float32')
                     _logger.warning('in %s(%s -> Gemm -> %s): '
                                     'attribute "beta" seems to be an interger, '
                                     'however dtype can not be inferred, '
                                     'still use float32',
                                     name, inputs, outputs)
-                beta = np.dtype(vm_dtype).type(beta)
+                beta = _np.dtype(vm_dtype).type(beta)
             prog.Op('', 'Constant',
                     [],
                     [val_beta], # val
@@ -1316,7 +1316,7 @@ def Pad(
         assert mode == 'constant', 'mode {} is supported only in pad2d'.format(mode)
         fluid_op = 'pad'
         pad2d_attr = ''
-    paddings = np.array(pads).reshape((-1, 2)).transpose().flatten().tolist() # SSEE -> SESE
+    paddings = _np.array(pads).reshape((-1, 2)).transpose().flatten().tolist() # SSEE -> SESE
     od_attrs['paddings'] = paddings
     name_attr = ', name={}'.format(repr(name)) if name else ''
 
@@ -1443,7 +1443,7 @@ def Reshape(
         prog.Op('', 'Cast',
                 [val_shape],
                 [val_shape_int32], # var
-                dict(to=np.dtype('int32')), # use np.dtype
+                dict(to=_np.dtype('int32')), # use np.dtype
                 value_infos=value_infos,
                 name=(name + '_cast'),
                 )
@@ -1767,6 +1767,8 @@ if __name__ == '__main__':
     logger = _logging.getLogger('symbolic_test')
 
     from writer import Program
+
+    np = _np
 
     prog = Program()
     AdaptiveAveragePool(prog, ['X'], ['Y'],

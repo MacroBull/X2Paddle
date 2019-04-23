@@ -81,7 +81,7 @@ def main(**kwargs):
         # imports
         validate = validation.validate
 
-        # in fact fluid can not fully clear the context
+        # in fact fluid may not fully clear the context
         # continuous validation may be inaccurate
         decimal = kwargs.get('precision', 3.)
 

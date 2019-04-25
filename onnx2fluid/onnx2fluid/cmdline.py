@@ -34,61 +34,52 @@ def main(**kwargs):
     from .conversion import convert
 
     logger = logging.getLogger('onnx2fluid')
-    debug = kwargs.get('debug', False)
+#    debug = kwargs.get('debug', False)
 
     # prepare arguments
-    filename = kwargs['model'][0]
+    filename = kwargs.pop('model')[0]
     basepath, _ = shutil.os.path.splitext(filename)
-    save_dir = kwargs.get('output_dir', '')
+    save_dir = kwargs.pop('output_dir', '')
     # model.onnx -> model/
     save_dir = (save_dir.rstrip(shutil.os.sep) if save_dir else basepath) + shutil.os.sep
     model_basename = DEFAULT_MODEL_MODULE + '.py'
     model_func_name = DEFAULT_MODEL_FUNC
-    embed_params = kwargs.get('embed_params', False)
     onnx_opset_version = DEFAULT_ONNX_OPSET_VERSION
-    onnx_opset_pedantic = kwargs.get('pedantic', True)
-    onnx_skip_version_conversion = kwargs.get('skip_version_conversion', False)
-    archive = kwargs.get('archive', None)
+    onnx_opset_pedantic = kwargs.pop('pedantic', True)
+    onnx_skip_version_conversion = kwargs.pop('skip_version_conversion', False)
 
     # convert
     convert(filename, save_dir,
             model_basename=model_basename,
             model_func_name=model_func_name,
-            embed_params=embed_params,
             onnx_opset_version=onnx_opset_version,
             onnx_opset_pedantic=onnx_opset_pedantic,
             onnx_skip_version_conversion=onnx_skip_version_conversion,
-            debug=debug)
+            **kwargs)
 
     # validate
     passed = True
-    golden_data_filename = kwargs.get('test_data', '')
+    golden_data_filename = kwargs.pop('test_data', '')
     if golden_data_filename:
         from .validation import validate
-
-        # in fact fluid may not fully clear the context
-        # continuous validation may be inaccurate
-        decimal = kwargs.get('precision', 3.)
 
         logger.info('starting validation on desc ...')
         passed &= validate(shutil.os.path.join(save_dir, '__model__'),
                            golden_data_filename,
-                           decimal=decimal,
-                           )
+                           **kwargs)
 
         logger.info('starting validation on code ...')
         passed &= validate(shutil.os.path.join(save_dir, model_basename),
                            golden_data_filename,
                            model_func_name=model_func_name,
-                           decimal=decimal,
-                           save_inference_model=debug, # this overwrite desc file for test
-                           )
+                           **kwargs)
 
     if not passed:
         logger.error('validation failed, exit')
         return
 
     # create zip file
+    archive = kwargs.pop('archive', None)
     if archive is not None:
         if archive == '':
             archive = save_dir.rstrip(shutil.os.sep) + '.zip'

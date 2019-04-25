@@ -20,7 +20,8 @@ def convert(onnx_model_filename, save_dir,
             model_basename='model.py', model_func_name='inference',
             embed_params=False,
             onnx_opset_version=9, onnx_opset_pedantic=True, onnx_skip_version_conversion=False,
-            debug=False):
+            debug=False,
+            **kwargs):
     """
     convert an ONNX model to Paddle fluid Python code and desc pb
     """

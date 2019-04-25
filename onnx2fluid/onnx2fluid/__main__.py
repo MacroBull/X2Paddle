@@ -50,8 +50,11 @@ parser.add_argument('--skip-version-conversion', '-y', action='store_true', defa
 parser.add_argument('--archive', '-z', nargs='?', type=str, default=None, const='',
                     help='compress outputs to ZIP file if conversion successed',
                     )
-parser.add_argument('--precision', '-p', type=float, default=3.,
-                    help='assertion decimal for validation',
+parser.add_argument('--atol', '-p', type=float, default=1e-3,
+                    help='assertion absolute tolerance for validation',
+                    )
+parser.add_argument('--rtol', type=float, default=1e-4,
+                    help='assertion relative tolerance for validation',
                     )
 args = parser.parse_args()
 

@@ -3,4 +3,4 @@ cd $path
 
 pip install pre-commit
 pip install yapf
-pre-commit install
+pre-commit install --allow-missing-config

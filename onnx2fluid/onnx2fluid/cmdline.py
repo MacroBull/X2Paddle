@@ -34,7 +34,7 @@ def main(**kwargs):
     from .conversion import convert
 
     logger = logging.getLogger('onnx2fluid')
-#    debug = kwargs.get('debug', False)
+    debug = kwargs.get('debug', False)
 
     # prepare arguments
     filename = kwargs.pop('model')[0]
@@ -69,9 +69,11 @@ def main(**kwargs):
                            **kwargs)
 
         logger.info('starting validation on code ...')
+        # this re-generate desc proto with python code when debug on
         passed &= validate(shutil.os.path.join(save_dir, model_basename),
                            golden_data_filename,
                            model_func_name=model_func_name,
+                           save_inference_model=debug,
                            **kwargs)
 
     if not passed:

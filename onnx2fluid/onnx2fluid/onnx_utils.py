@@ -113,7 +113,8 @@ def node_attrs(node):
 	return {attr.name: get_attribute_value2(attr) for attr in node.attribute} # dict
 
 
-def node_topo(nodes, topo='default'):
+def node_topo(nodes,
+			  topo='default'):
 	"""
 	build indices with given topology to an ONNX node graph
 	"""

@@ -141,7 +141,8 @@ def convert(onnx_model_filename, save_dir,
 		logger.warning('this causes little problem for PaddlePaddle, '
 					   'but Paddle Mobile may not infer correctly'
 					   )
-		logger.warning('please consider adding option -d to invoke PaddlePaddle shape-inference')
+		logger.warning('please consider running onnx2fluid.validation with -i '
+					   'to invoke PaddlePaddle shape-inference')
 
 	# weight writer
 	for name, weight in graph_weights(onnx_graph):
@@ -210,12 +211,8 @@ def convert(onnx_model_filename, save_dir,
 	logger.info('conversion finished')
 
 
-if __name__ == '__main__':
-	del convert
-
+def main():
 	import argparse
-
-	from onnx2fluid.conversion import convert
 
 	parser = argparse.ArgumentParser(description='onnx2fluid.convert',
 									 formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -262,3 +259,11 @@ if __name__ == '__main__':
 			onnx_opset_pedantic=pedantic,
 			onnx_skip_version_conversion=skip_version_conversion,
 			debug=debug)
+
+
+if __name__ == '__main__':
+	del convert
+
+	from onnx2fluid.conversion import convert
+
+	main()

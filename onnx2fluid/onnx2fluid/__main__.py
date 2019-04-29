@@ -56,6 +56,9 @@ parser.add_argument('--atol', '-p', type=float, default=1e-3,
 parser.add_argument('--rtol', type=float, default=1e-2,
 					help='assertion relative tolerance for validation',
 					)
+parser.add_argument('--infer_inputs', '-i', nargs='?', default=None, const='',
+					help='perform shape-inference with given input names and re-save model',
+					)
 args = parser.parse_args()
 
 

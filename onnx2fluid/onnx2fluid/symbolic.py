@@ -184,12 +184,21 @@ def _const_weight_or_none(value_infos, val_name):
 		return None
 	value_info = value_infos[val_name]
 	const_value = value_info.get('const_value', None)
-	if const_value:
+	if const_value is not None:
 		return const_value
 	get_weight_func = value_info.get('get_weight', None)
-	if get_weight_func:
+	if get_weight_func is not None:
 		return get_weight_func()
 	return None
+
+
+def _check_embeddable(value_infos, *val_names):
+	keyword = 'get_weight'
+	for val_name in val_names:
+		if keyword not in value_infos[val_name]:
+			_logger.warning('parameter %s not embeddable for some ops', val_name)
+			return False
+	return True
 
 
 def _default(prog, op_type, inputs, outputs, attrs,
@@ -372,9 +381,9 @@ def _global_pool(prog, pool_type, inputs, outputs, attrs, value_infos,
 	input_shape = _shape_or_none(value_infos, val_x)
 	output_shape = _shape_or_none(value_infos, val_y)
 	assert input_shape is not None or output_shape is not None, 'poolnd not inferred' # NC...
-	if input_shape:
+	if input_shape is not None:
 		poolnd = len(input_shape) - 2 # NC...
-	elif output_shape:
+	elif output_shape is not None:
 		poolnd = len(output_shape) - 2 # NC...
 	assert 2 <= poolnd <= 3, 'only pool2d and pool3d is supported'
 
@@ -543,7 +552,7 @@ def _interpolate(prog, inputs, outputs, attrs, value_infos,
 		assert len(scales) == 4, 'only 4-D Tensor as X and Y supported'
 		assert scales[0] == 1 and scales[1] == 1, 'only scale on (NC)HW supported'
 		assert scales[2] == scales[3], 'only aspect-ratio-invariant scale supported'
-	scale = scales[2] if scales else None
+	scale = None if scales is None else scales[2]
 	# try input shape
 	if scale is None:
 		assert out_shape_, 'neither scales nor output shape is available'
@@ -685,15 +694,17 @@ def BatchNormalization(
 	epsilon = attrs.get('epsilon', 1e-5) # optional
 	name_attr = ', name={}'.format(repr(name)) if name else ''
 	if embed_params:
+		embed_params = _check_embeddable(value_infos, val_scale, val_b, val_mean, val_var)
+	if embed_params:
 		assert name != ''
 		var_scale = name + '.w_0'
 		var_b = name + '.b_0'
 		var_mean = name + '.w_1'
 		var_var = name + '.w_2'
-		value_infos[val_scale].setdefault('embeded_as', []).append(var_scale)
-		value_infos[val_b].setdefault('embeded_as', []).append(var_b)
-		value_infos[val_mean].setdefault('embeded_as', []).append(var_mean)
-		value_infos[val_var].setdefault('embeded_as', []).append(var_var)
+		value_infos[val_scale]['embeded_as'].append(var_scale)
+		value_infos[val_b]['embeded_as'].append(var_b)
+		value_infos[val_mean]['embeded_as'].append(var_mean)
+		value_infos[val_var]['embeded_as'].append(var_var)
 		param_attr = ''
 	else:
 		var_scale = _make_var_name(val_scale)
@@ -753,7 +764,7 @@ def Cast(
 	if not isinstance(dtype, _np.dtype): # additional: possible np.dtype
 		dtype = TENSOR_TYPE_TO_NP_TYPE[dtype]
 	output_dtype = _dtype_or_none(value_infos, val_output)
-	if output_dtype:
+	if output_dtype is not None:
 		assert dtype == output_dtype, 'dtype of to unmatches output'
 
 	fluid_op = 'cast'
@@ -825,7 +836,7 @@ def Constant(
 	"""
 
 	# I/O
-	assert len(inputs) == 0
+	assert len(inputs) == 0, 'constant op accept no inputs'
 	val_output, = outputs
 	var_output = _make_var_name(val_output)
 
@@ -833,7 +844,7 @@ def Constant(
 	value = attrs['value'] # required
 	dtype = _np.dtype(value.dtype)
 	output_dtype = _dtype_or_none(value_infos, val_output)
-	if output_dtype:
+	if output_dtype is not None:
 		assert dtype == output_dtype, 'tensor dtype unmatches storage dtype'
 #    dtype = _np.dtype('float32') # HINT: force to float32
 	shape = attrs.get('shape', None) #
@@ -939,12 +950,15 @@ def Conv(
 	var_x = _make_var_name(val_x)
 	name_attr = ', name={}'.format(repr(name)) if name else ''
 	if embed_params:
+		embed_params = (_check_embeddable(value_infos, val_w) and
+				        not has_bias or _check_embeddable(value_infos, val_b))
+	if embed_params:
 		assert name != ''
 		var_w = name + '.w_0'
-		value_infos[val_w].setdefault('embeded_as', []).append(var_w)
+		value_infos[val_w]['embeded_as'].append(var_w)
 		if has_bias:
 			var_b = name + '.b_0'
-			value_infos[val_b].setdefault('embeded_as', []).append(var_b)
+			value_infos[val_b]['embeded_as'].append(var_b)
 			param_attr = ''
 		else:
 			param_attr = ', bias_attr=False'
@@ -1035,12 +1049,15 @@ def ConvTranspose(
 	var_x = _make_var_name(val_x)
 	name_attr = ', name={}'.format(repr(name)) if name else ''
 	if embed_params:
+		embed_params = (_check_embeddable(value_infos, val_w) and
+				        not has_bias or _check_embeddable(value_infos, val_b))
+	if embed_params:
 		assert name != ''
 		var_w = name + '.w_0'
-		value_infos[val_w].setdefault('embeded_as', []).append(var_w)
+		value_infos[val_w]['embeded_as'].append(var_w)
 		if has_bias:
 			var_b = name + '.b_0'
-			value_infos[val_b].setdefault('embeded_as', []).append(var_b)
+			value_infos[val_b]['embeded_as'].append(var_b)
 			param_attr = ''
 		else:
 			param_attr = ', bias_attr=False'
@@ -1261,9 +1278,9 @@ def Pad(
 	assume_pad2d = False
 	if len(pads) == 4:
 		assume_pad2d |= mode != 'constant'
-		if data_shape:
+		if data_shape is not None:
 			assume_pad2d |= data_shape and len(data_shape) == 4 # NCHW
-		if output_shape:
+		if output_shape is not None:
 			assume_pad2d |= output_shape and len(output_shape) == 4 # NCHW
 	od_attrs = {'pad_value': value}
 	if assume_pad2d:
@@ -1326,9 +1343,11 @@ def PRelu(
 	fluid_op = 'prelu'
 	name_attr = ', name={}'.format(repr(name)) if name else ''
 	if embed_params:
+		embed_params = _check_embeddable(value_infos, val_slope)
+	if embed_params:
 		assert name != ''
 		var_slope = name + '.w_0'
-		value_infos[val_slope].setdefault('embeded_as', []).append(var_slope)
+		value_infos[val_slope]['embeded_as'].append(var_slope)
 		param_attr = ''
 	else:
 		var_slope = _make_var_name(val_slope)
@@ -1519,7 +1538,7 @@ def Slice(
 	starts = attrs['starts'] # required
 	ends = attrs['ends'] # required
 	shape = _shape_or_none(value_infos, val_data)
-	if shape:
+	if shape is not None:
 #        ndims = len(shape)
 #        for idx, value in enumerate(axes):
 #            if value > ONNX_INT_MAX // 2:

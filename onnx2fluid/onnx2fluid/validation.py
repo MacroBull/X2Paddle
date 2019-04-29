@@ -11,14 +11,15 @@ import importlib, logging, os, sys
 
 def flatten_dict(obj,
 				 out=None):
-	assert isinstance(obj, dict)
+	assert isinstance(obj, dict), 'dict type required'
+
 	if out is None:
 		out = type(obj)()
 	for key, value in obj.items():
 		if isinstance(value, dict):
 			flatten_dict(value, out)
 		else:
-			assert key not in out
+			assert key not in out, 'key conflicted'
 			out[key] = value
 	return out
 
@@ -29,10 +30,12 @@ def ensure_list(obj):
 	return [obj]
 
 
-def validate(fluid_model_filename, golden_data_filename,
-			 model_func_name='inference',
+def validate(fluid_model_filename,
+			 golden_data_filename='',
 			 atol=1e-3, rtol=1e-3,
+			 model_func_name='inference',
 			 save_inference_model=False,
+			 inference_input_names=None,
 			 **kwargs):
 	"""
 	inference the converted Paddle fluid model, validate with given golden data
@@ -81,30 +84,41 @@ def validate(fluid_model_filename, golden_data_filename,
 		raise ValueError('unsupported Paddle fluid model filename')
 
 	# load data
-	logger.info('using golden data %s', golden_data_filename)
-	if golden_data_filename.endswith('.npz'):
-		test_data = np.load(golden_data_filename, encoding='bytes')
-		input_data = test_data['inputs'].tolist()
-		output_data = test_data['outputs'].tolist()
+	if golden_data_filename:
+		logger.info('using golden data %s', golden_data_filename)
+		if golden_data_filename.endswith('.npz'):
+			test_data = np.load(golden_data_filename, encoding='bytes')
+			input_data = test_data['inputs'].tolist()
+			output_data = test_data['outputs'].tolist()
+		else:
+			test_data = np.load(golden_data_filename, encoding='bytes').tolist()
+			input_data = test_data['inputs']
+			output_data = test_data['outputs']
+		input_data = flatten_dict(input_data)
+		output_data = flatten_dict(output_data)
+		input_names = input_data.keys()
+		logger.info('found %d I/O golden data, starting test ...',
+		   			len(input_data) + len(output_data))
 	else:
-		test_data = np.load(golden_data_filename, encoding='bytes').tolist()
-		input_data = test_data['inputs']
-		output_data = test_data['outputs']
-	input_data = flatten_dict(input_data)
-	output_data = flatten_dict(output_data)
-	logger.info('found %d I/O golden data, starting test ...',
-				len(input_data) + len(output_data))
+		assert inference_input_names, 'input names required for shape-only inference'
 
-	# DEBUG: reload test for Python code
-	if basename.endswith('.py') and save_inference_model:
-		fluid.io.save_inference_model(fluid_model_dir, input_data.keys(), var_outs, exe,
+		input_names = inference_input_names
+		logger.info('using input names: %s', ', '.join(input_names))
+
+	# shape-inference and re-save
+	if save_inference_model:
+		# TODO: invoke fluid type_shape_infer API
+		fluid.io.save_inference_model(fluid_model_dir, input_names, var_outs, exe,
 									  main_program=prog, export_for_deployment=True)
 		logger.info('model re-save passed')
 		fluid.io.load_inference_model(fluid_model_dir, exe)
 		logger.info('model re-load passed')
 
+	if not golden_data_filename:
+		return True
+
 	# execute
-	outputs = exe.run(prog, feed=input_data, fetch_list=out_names)
+	outputs = exe.run(prog, feed=input_data, fetch_list=out_names) # out_names can be vars
 	logger.info('execution passed')
 
 	# validate
@@ -122,11 +136,10 @@ def validate(fluid_model_filename, golden_data_filename,
 		logger.info('accuracy passed')
 	else:
 		logger.info('accuracy not passed')
-
 	return passed
 
 
-if __name__ == '__main__':
+def main():
 	import argparse
 
 	parser = argparse.ArgumentParser(description='onnx2fluid.validate',
@@ -138,7 +151,7 @@ if __name__ == '__main__':
 	parser.add_argument('--debug', '-d', action='store_true',
 						help='enable debug logging and checking',
 						)
-	parser.add_argument('--test_data', '-t', type=str,
+	parser.add_argument('--test_data', '-t', type=str, default='',
 						help='I/O golden data for validation, e.g. test.npy, test.npz',
 						)
 	parser.add_argument('--atol', '-p', type=float, default=1e-3,
@@ -147,6 +160,9 @@ if __name__ == '__main__':
 	parser.add_argument('--rtol', type=float, default=1e-2,
 						help='assertion relative tolerance for validation',
 						)
+	parser.add_argument('--infer_inputs', '-i', nargs='?', default=None, const='',
+						help='perform shape-inference with given input names and re-save model',
+						)
 	args = parser.parse_args()
 
 
@@ -154,11 +170,19 @@ if __name__ == '__main__':
 	logging_level = logging.DEBUG if args.debug else logging.INFO
 	logging.basicConfig(format=logging_format, level=logging_level)
 
-	debug = args.debug
+	#	debug = args.debug
 	fluid_model_filename = args.model[0]
 	golden_data_filename = args.test_data
 	atol, rtol = args.atol, args.rtol
+	save_inference_model = args.infer_inputs is not None
+	inference_input_names = args.infer_inputs.split(',') if args.infer_inputs else None
 
-	validate(fluid_model_filename, golden_data_filename,
+	validate(fluid_model_filename,
+			 golden_data_filename=golden_data_filename,
 			 atol=atol, rtol=rtol,
-			 save_inference_model=debug)
+			 save_inference_model=save_inference_model,
+			 inference_input_names=inference_input_names)
+
+
+if __name__ == '__main__':
+	main()

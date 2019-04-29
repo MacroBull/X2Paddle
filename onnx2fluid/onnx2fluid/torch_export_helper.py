@@ -26,7 +26,8 @@ def ensure_tuple(obj):
 
 def flatten_list(obj,
 				 out=None):
-	assert isinstance(obj, list)
+	assert isinstance(obj, list), 'list type required'
+
 	if out is None:
 		out = type(obj)()
 	for item in obj:
@@ -44,7 +45,7 @@ def export_data(state_dict,
 	"""
 
 	def str_(obj):
-		if isinstance(obj, (tuple, list)):
+		if isinstance(obj, (tuple, list, set)):
 			return str(obj)[1:-1].replace(' ', '')
 		return str(obj)
 

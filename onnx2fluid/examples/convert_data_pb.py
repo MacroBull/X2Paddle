@@ -16,19 +16,19 @@ from glob import glob
 
 
 def make_var_name(name):
-	"""
-	make a valid variable name in Python code
-	"""
+    """
+    make a valid variable name in Python code
+    """
 
-	if name == '':
-		return '_'
-	if name[0].isdigit():
-		return 'var_' + name
-	for s in ' \\|/:': #
-		name = name.replace(s, '_')
-	if name.startswith('_'):
-		name = 'var' + name
-	return name
+    if name == '':
+        return '_'
+    if name[0].isdigit():
+        return 'var_' + name
+    for s in ' \\|/:-': #
+        name = name.replace(s, '_')
+    if name.startswith('_'):
+        name = 'var' + name
+    return name
 
 
 data_dir = os.path.dirname(sys.argv[1])
@@ -39,24 +39,24 @@ squeeze_data = len(sys.argv) > 4
 # Load inputs
 inputs = []
 for fn in glob(os.path.join(data_dir, 'input_*.pb')):
-	tensor = onnx.TensorProto()
-	with open(fn, 'rb') as f:
-		tensor.ParseFromString(f.read())
-	tensor = numpy_helper.to_array(tensor)
-	while squeeze_data and tensor.ndim > 4 and tensor.shape[0] == 1:
-		tensor = tensor.squeeze(0)
-	inputs.append(tensor)
+    tensor = onnx.TensorProto()
+    with open(fn, 'rb') as f:
+        tensor.ParseFromString(f.read())
+    tensor = numpy_helper.to_array(tensor)
+    while squeeze_data and tensor.ndim > 4 and tensor.shape[0] == 1:
+        tensor = tensor.squeeze(0)
+    inputs.append(tensor)
 
 # Load outputs
 outputs = []
 for fn in glob(os.path.join(data_dir, 'output_*.pb')):
-	tensor = onnx.TensorProto()
-	with open(fn, 'rb') as f:
-		tensor.ParseFromString(f.read())
-	tensor = numpy_helper.to_array(tensor)
-	while squeeze_data and tensor.ndim > 2 and tensor.shape[0] == 1:
-		tensor = tensor.squeeze(0)
-	outputs.append(tensor)
+    tensor = onnx.TensorProto()
+    with open(fn, 'rb') as f:
+        tensor.ParseFromString(f.read())
+    tensor = numpy_helper.to_array(tensor)
+    while squeeze_data and tensor.ndim > 2 and tensor.shape[0] == 1:
+        tensor = tensor.squeeze(0)
+    outputs.append(tensor)
 
 inputs = Dict(zip(map(make_var_name, input_names), inputs))
 outputs = Dict(zip(map(make_var_name, output_names), outputs))

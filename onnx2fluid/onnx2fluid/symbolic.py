@@ -1413,6 +1413,8 @@ def Reshape(
 	name_attr = ', name={}'.format(repr(name)) if name else ''
 
 	# generation
+	val_shape_int32 = val_shape + '_int32' # explicit variable
+	var_shape_int32 = _make_var_name(val_shape_int32)
 	prog.Code('# shape:{}={} # const as literal'.format(var_shape, shape))
 	if is_const_shape:
 		prog.Code('{} = layers.{}({}'
@@ -1426,8 +1428,6 @@ def Reshape(
 						  name_attr,
 						  ))
 	else:
-		val_shape_int32 = val_shape + '_int32' # explicit variable
-		var_shape_int32 = _make_var_name(val_shape_int32)
 		prog.Op('', 'Cast',
 				[val_shape],
 				[val_shape_int32], # var
@@ -1451,18 +1451,11 @@ def Reshape(
 	var_xshape = name + '.xshape' # dummy output
 	prog.VarDesc(var_reshaped)
 	prog.VarDesc(var_xshape)
-	if is_const_shape:
-		prog.OpDesc(fluid_op,
-					([var_data], 'X'),
-					([var_reshaped, var_xshape], 'Out', 'XShape'),
-					{'shape': shape},
-					)
-	else:
-		prog.OpDesc(fluid_op,
-					([var_data, var_shape_int32], 'X', 'Shape'),
-					([var_reshaped, var_xshape], 'Out', 'XShape'),
-					{'shape': shape},
-					)
+	prog.OpDesc(fluid_op,
+				([var_data, var_shape_int32], 'X', 'Shape'),
+				([var_reshaped, var_xshape], 'Out', 'XShape'),
+				{'shape': shape},
+				)
 
 
 def Resize(

@@ -217,7 +217,7 @@ class Program(object):
 		self.var_descs[var_name] = var_desc
 
 		if value_info:
-			self.VarTypeInfo(var_name, value_info, remove_batch=remove_batch)
+			self.VarTypeShapeInfo(var_name, value_info, remove_batch=remove_batch)
 
 	def Op(self, domain, op_type,
 		   *args, **kwargs):
@@ -253,7 +253,7 @@ class Program(object):
 		else:
 			self.code_mutable = code_mutable
 
-	def VarTypeInfo(self, var_name, value_info,
+	def VarTypeShapeInfo(self, var_name, value_info,
 				    remove_batch=None):
 		"""
 		set value_info for var

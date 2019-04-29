@@ -107,7 +107,25 @@ def validate(fluid_model_filename,
 
 	# shape-inference and re-save
 	if save_inference_model:
-		# TODO: invoke fluid type_shape_infer API
+		for block in prog.blocks:
+			block_desc = block.desc
+			for idx_op in range(block_desc.op_size()):
+				op_desc = block_desc.op(idx_op)
+				if op_desc.type() in ('feed', 'fetch'):
+					continue
+				op_desc.infer_var_type(block_desc)
+				op_desc.infer_shape(block_desc)
+			for var_name, var in block.vars.items():
+				var_desc = var.desc
+				if var_desc.type() != fluid.core.VarDesc.VarType.LOD_TENSOR:
+					continue
+				# WORKAROUND: dirty way to give dtype to partial-infered vars
+				# which could not be cleared!
+				try:
+					var.to_string(True)
+				except ValueError:
+					var_desc.set_dtype(fluid.core.VarDesc.VarType.FP32)
+
 		fluid.io.save_inference_model(fluid_model_dir, input_names, var_outs, exe,
 									  main_program=prog, export_for_deployment=True)
 		logger.info('model re-save passed')

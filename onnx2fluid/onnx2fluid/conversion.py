@@ -131,7 +131,7 @@ def convert(onnx_model_filename, save_dir,
 	# shape-inference
 	for name, value_info in graph_value_infos.items():
 		var_name = make_var_name(name)
-		fluid_program.VarTypeInfo(var_name, value_info, remove_batch=False) # shape-infer only
+		fluid_program.VarTypeShapeInfo(var_name, value_info, remove_batch=False) # shape-infer only
 	bad_var_names = []
 	for var_name, var_desc in fluid_program.var_descs.items():
 		if not var_desc.type.lod_tensor.HasField('tensor'):

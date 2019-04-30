@@ -50,7 +50,7 @@ def print_pb_structure(message,
             print_pb_structure(getattr(message, field.name),
                                loop_iterative=loop_iterative, depth=(depth + 1))
 
-    if loop_iterative and  hasattr(message, 'MergeFrom') and hasattr(message, '__len__'):
+    if loop_iterative and hasattr(message, 'MergeFrom') and hasattr(message, '__len__'):
         for idx, item in enumerate(message):
             print('\t' * depth + '-', idx)
             print_pb_structure(item,
@@ -186,10 +186,7 @@ def node_iter(nodes,
     generator for ONNX node graph with given indices
     """
 
-    if indices is None:
-        indices = range(len(nodes))
-
-    for index in indices:
+    for index in indices or range(len(nodes)):
         node = nodes[index]
         name = node.name
         domain = node.domain
@@ -316,16 +313,16 @@ def optimize_model_skip_op_for_inference(
     ret_nodes = ret.graph.node
     nodes_to_remove = []
     for node_idx, node in enumerate(nodes):
-        if not(node.domain == DEFAULT_OP_DOMAIN or node.domain == ''):
+        if not (node.domain == DEFAULT_OP_DOMAIN or node.domain == ''):
             continue
         op_type = node.op_type
-        if not(op_type in op_list):
+        if op_type not in op_list:
             continue
 
         if op_type in ('Dropout', ):
             input_name = node.input[0]
             output_name = node.output[0]
-        elif not(len(node.input) == 1 and len(node.output) == 1):
+        elif not (len(node.input) == 1 and len(node.output) == 1):
             logger.warning('currently only 1-input-1-output op supported, skip required %d: %s',
                            node_idx, node.op_type)
             continue
@@ -413,9 +410,9 @@ def optimize_model_cast(model):
     ret_nodes = ret.graph.node
     nodes_to_remove = []
     for node_idx, node in enumerate(nodes):
-        if not(node.domain == DEFAULT_OP_DOMAIN or node.domain == ''):
+        if not (node.domain == DEFAULT_OP_DOMAIN or node.domain == ''):
             continue
-        if not(node.op_type == 'Cast'):
+        if not (node.op_type == 'Cast'):
             continue
         attrs = node_attrs(node)
         output_dtype = TENSOR_TYPE_TO_NP_TYPE[attrs['to']]
@@ -464,7 +461,7 @@ def optimize_model_slice(model):
         chain = []
         while True:
             node = nodes[node_idx]
-            if not(node.domain == DEFAULT_OP_DOMAIN or node.domain == ''):
+            if not (node.domain == DEFAULT_OP_DOMAIN or node.domain == ''):
                 return chain
             if not node.op_type == 'Slice':
                 return chain

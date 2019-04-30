@@ -9,6 +9,9 @@ Created on Fri Mar 22 12:17:19 2019
 import importlib, logging, os, sys
 
 
+logger = logging.getLogger(__name__)
+
+
 def flatten_dict(obj,
                  out=None):
     assert isinstance(obj, dict), 'dict type required'
@@ -28,6 +31,42 @@ def ensure_list(obj):
     if isinstance(obj, (list, tuple, set)):
         return list(obj)
     return [obj]
+
+
+def fluid_prog_shape_infer(prog):
+    """
+    additional type-shape inference for fluid program
+    """
+
+    import paddle.fluid as fluid
+
+    assert isinstance(prog, fluid.framework.Program)
+
+    logger.info('performing type-shape inference ...')
+    for block in prog.blocks:
+        block_desc = block.desc
+
+        for idx_op in range(block_desc.op_size()):
+            op_desc = block_desc.op(idx_op)
+            if op_desc.type() in ('feed', 'fetch'):
+                continue
+
+            op_desc.infer_var_type(block_desc)
+            op_desc.infer_shape(block_desc)
+
+        for var_name, var in block.vars.items():
+            var_desc = var.desc
+            if var_desc.type() != fluid.core.VarDesc.VarType.LOD_TENSOR:
+                continue
+
+            # WORKAROUND: dirty way to give dtype to partial-infered vars
+            # which could not be cleared!
+            try:
+                var.to_string(True)
+            except ValueError:
+                var_desc.set_dtype(fluid.core.VarDesc.VarType.FP32)
+                logger.debug('dtype of var %s not inferred, float32 assumed',
+                             var_name)
 
 
 def validate(fluid_model_filename,
@@ -53,12 +92,12 @@ def validate(fluid_model_filename,
     # load model
     fluid_model_dir, basename = os.path.split(fluid_model_filename)
     if basename == '__model__': # is desc program
-        logger.debug('using desc file %s', basename)
+        logger.info('using desc file %s', basename)
         prog, _, var_outs = fluid.io.load_inference_model(fluid_model_dir, exe)
         out_names = var_outs # HINT: pass var if fetch ops already created
         logger.info('model load passed')
     elif basename.endswith('.py'): # is Python code
-        logger.debug('using code file %s', basename)
+        logger.info('using code file %s', basename)
         module_name, _ = os.path.splitext(basename)
         sys_path = sys.path.copy()
         sys.path.append(fluid_model_dir)
@@ -97,7 +136,7 @@ def validate(fluid_model_filename,
         input_data = flatten_dict(input_data)
         output_data = flatten_dict(output_data)
         input_names = input_data.keys()
-        logger.info('found %d I/O golden data, starting test ...',
+        logger.info('golden data contain %d inputs or outputs',
                        len(input_data) + len(output_data))
     else:
         assert inference_input_names, 'input names required for type-shape inference'
@@ -107,25 +146,7 @@ def validate(fluid_model_filename,
 
     # type-shape inference and re-save
     if save_inference_model:
-        for block in prog.blocks:
-            block_desc = block.desc
-            for idx_op in range(block_desc.op_size()):
-                op_desc = block_desc.op(idx_op)
-                if op_desc.type() in ('feed', 'fetch'):
-                    continue
-                op_desc.infer_var_type(block_desc)
-                op_desc.infer_shape(block_desc)
-            for var_name, var in block.vars.items():
-                var_desc = var.desc
-                if var_desc.type() != fluid.core.VarDesc.VarType.LOD_TENSOR:
-                    continue
-                # WORKAROUND: dirty way to give dtype to partial-infered vars
-                # which could not be cleared!
-                try:
-                    var.to_string(True)
-                except ValueError:
-                    var_desc.set_dtype(fluid.core.VarDesc.VarType.FP32)
-
+        fluid_prog_shape_infer(prog)
         fluid.io.save_inference_model(fluid_model_dir, input_names, var_outs, exe,
                                       main_program=prog, export_for_deployment=True)
         logger.info('model re-save passed')
@@ -142,7 +163,7 @@ def validate(fluid_model_filename,
     # validate
     passed = True
     for (name, truth), output in zip(output_data.items(), outputs):
-        logger.info('testing output {} ...'.format(name))
+        logger.info('testing on output {} ...'.format(name))
         try:
             np.testing.assert_allclose(output, truth,
                                        rtol=rtol, atol=atol,
@@ -182,7 +203,6 @@ def main():
                         help='perform type-shape inference with given input names and re-save model',
                         )
     args = parser.parse_args()
-
 
     logging_format = '[%(levelname)8s]%(name)s::%(funcName)s:%(lineno)04d: %(message)s'
     logging_level = logging.DEBUG if args.debug else logging.INFO

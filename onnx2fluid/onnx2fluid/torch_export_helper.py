@@ -50,10 +50,10 @@ def export_data(state_dict,
         return str(obj)
 
     prefix_ = prefix + ('_' if prefix else '')
-    fp = open('{}.txt'.format(prefix if prefix else 'meta'), 'w')
+    fp = open('{}.txt'.format(prefix or 'meta'), 'w')
     for key, value in state_dict.items():
         data = None
-        if torch and torch.is_tensor(value):
+        if torch.is_tensor(value):
             data = value.data.cpu().numpy()
         elif isinstance(value, np.ndarray):
             data = value
@@ -85,6 +85,8 @@ def export_onnx_with_validation(model, inputs, export_basepath,
         return arrays
 
     def zip_dict(keys, values):
+        if keys is None: # can be None
+            keys = range(len(values))
         ret = Dict()
         for idx, (key, value) in enumerate(zip(keys, values)):
             is_key_list = is_tuple_or_list(key)
@@ -98,9 +100,9 @@ def export_onnx_with_validation(model, inputs, export_basepath,
 
     torch_inputs = ensure_tuple(inputs) # WORKAROUND: for torch.onnx
     outputs = torch.onnx.export(model, torch_inputs, export_basepath + '.onnx',
-                      input_names=flatten_list(input_names),
-                      output_names=flatten_list(output_names),
-                      *args, **kwargs)
+            input_names=None if input_names is None else flatten_list(input_names),
+            output_names=None if output_names is None else flatten_list(output_names),
+            *args, **kwargs)
     if outputs is None: # WORKAROUND: for torch.onnx
         outputs = model(*inputs)
     torch_outputs = ensure_tuple(outputs)
@@ -112,4 +114,5 @@ def export_onnx_with_validation(model, inputs, export_basepath,
     else:
         np.save(export_basepath + '.npy',
                 np.array(Dict(inputs=inputs, outputs=outputs)))
+
     return torch_outputs

@@ -34,7 +34,7 @@ def main(**kwargs):
     from .conversion import convert
 
     logger = logging.getLogger('onnx2fluid')
-    debug = kwargs.get('debug', False)
+#    debug = kwargs.get('debug', False)
 
     # prepare arguments
     filename = kwargs.pop('model')[0]
@@ -83,7 +83,7 @@ def main(**kwargs):
                            **kwargs)
 
     if not passed:
-        logger.error('validation failed, exit')
+        logger.fatal('validation failed, exit')
         return
 
     # create zip file

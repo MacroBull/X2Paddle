@@ -120,7 +120,8 @@ DEFAULT_IOA_CONSTRAINTS = {
             [(lambda i, o, a: a.get('axis', 0) == 0, 'only axis = 0 is supported'),
             ],
         'Shrink':
-            [(lambda i, o, a: a.get('bias', 0) == a.get('lambd', 0.5), 'only SoftShrink with bias = lambd is supported'),
+            [(lambda i, o, a: a.get('bias', 0) == a.get('lambd', 0.5),
+              'only SoftShrink with bias = lambd is supported'),
             ],
 #        'Softmax':
 #            [(lambda i, o, a: a.get('axis', 1) == -2, 'Paddle fluid Softmax works on dim -2 only'),
@@ -196,7 +197,7 @@ def _check_embeddable(value_infos, *val_names):
     keyword = 'get_weight'
     for val_name in val_names:
         if keyword not in value_infos[val_name]:
-            _logger.warning('parameter %s not embeddable for some ops', val_name)
+            _logger.warning('parameter %s not embeddable', val_name)
             return False
     return True
 
@@ -695,6 +696,9 @@ def BatchNormalization(
     name_attr = ', name={}'.format(repr(name)) if name else ''
     if embed_params:
         embed_params = _check_embeddable(value_infos, val_scale, val_b, val_mean, val_var)
+        if not embed_params and name:
+            _logger.warning('for op  %s(%s -> BatchNormalization -> %s)', name, inputs, outputs)
+            _logger.warning('broken Python code will be generated')
     if embed_params:
         assert name != ''
         var_scale = name + '.w_0'
@@ -852,7 +856,7 @@ def Constant(
         shape = _shape_or_none(value_infos, val_output)
     if shape is None:
         shape = list(value.shape)
-        _logger.warning('in (Constant -> %s): '
+        _logger.warning('in op (Constant -> %s): '
                         'attribute "shape" of %s not inferred, '
                         'using value as 1-D tensor may lead to fails',
                         outputs,
@@ -952,6 +956,9 @@ def Conv(
     if embed_params:
         embed_params = (_check_embeddable(value_infos, val_w) and
                         not has_bias or _check_embeddable(value_infos, val_b))
+        if not embed_params and name:
+            _logger.warning('for op  %s(%s -> Conv -> %s)', name, inputs, outputs)
+            _logger.warning('broken Python code will be generated')
     if embed_params:
         assert name != ''
         var_w = name + '.w_0'
@@ -1051,6 +1058,9 @@ def ConvTranspose(
     if embed_params:
         embed_params = (_check_embeddable(value_infos, val_w) and
                         not has_bias or _check_embeddable(value_infos, val_b))
+        if not embed_params and name:
+            _logger.warning('for op  %s(%s -> ConvTranspose -> %s)', name, inputs, outputs)
+            _logger.warning('broken Python code will be generated')
     if embed_params:
         assert name != ''
         var_w = name + '.w_0'
@@ -1115,23 +1125,6 @@ def ConvTranspose(
         prog.VarDesc(var_y)
 
 
-# should not appear
-#def Dropout(
-#        prog, inputs, outputs, value_infos,
-#        *args, **kwargs):
-#    """
-#    onnx::Dropout-7:9
-#    """
-#
-#    val_data, = inputs
-#    val_output, = outputs[:1]
-#
-#    _assign(prog,
-#            dict([(val_output, val_data)]),
-#            value_infos,
-#            )
-
-
 def Gemm(
         prog, inputs, outputs, attrs, value_infos, name,
         *args, **kwargs):
@@ -1181,7 +1174,7 @@ def Gemm(
                 vm_dtype = _dtype_or_none(value_infos, val_c)
                 if vm_dtype is None:
                     vm_dtype = _np.dtype('float32')
-                    _logger.warning('in %s(%s -> Gemm -> %s): '
+                    _logger.warning('in op %s(%s -> Gemm -> %s): '
                                     'attribute "beta" seems to be an interger, '
                                     'however dtype can not be inferred, '
                                     'still use float32',
@@ -1344,6 +1337,9 @@ def PRelu(
     name_attr = ', name={}'.format(repr(name)) if name else ''
     if embed_params:
         embed_params = _check_embeddable(value_infos, val_slope)
+        if not embed_params and name:
+            _logger.warning('for op  %s(%s -> PRelu -> %s)', name, inputs, outputs)
+            _logger.warning('broken Python code will be generated')
     if embed_params:
         assert name != ''
         var_slope = name + '.w_0'
@@ -1405,7 +1401,7 @@ def Reshape(
 #                               'this is not supported')
     if shape is None:
         shape = [1, -1] # who knows
-        _logger.warning('in %s(%s -> Reshape -> %s): '
+        _logger.warning('in op %s(%s -> Reshape -> %s): '
                         'input "shape" not inferred, use [1, -1] as dummy value, '
                         'the behavior of Paddle fluid maybe undefined',
                         name, inputs, outputs)

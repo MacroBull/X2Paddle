@@ -285,8 +285,7 @@ class Writer(object):
     fluid code and desc writter
     """
 
-#	CODE_INDENT = ' ' * 4
-    CODE_INDENT = '\t'
+    CODE_INDENT = ' ' * 4 # '\t'
 
     @staticmethod
     def header_code(func_name,

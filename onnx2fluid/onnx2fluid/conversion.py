@@ -54,10 +54,10 @@ def convert(onnx_model_filename, save_dir,
         logger.info('checking model ...')
         check_model(onnx_model)
         if onnx_opset_version is None: # WORKAROUND: RuntimeError: No Adapter For OP
-            logger.debug('assumed opset version: %d', DEFAULT_ONNX_OPSET_VERSION)
             logger.warning('opset conversion skipped for onnx_opset_pedantic is OFF')
+            logger.info('assumed opset version: %d', DEFAULT_ONNX_OPSET_VERSION)
         else:
-            logger.debug('using opset version: %d', onnx_opset_version)
+            logger.info('using opset version: %d', onnx_opset_version)
             onnx_model = convert_version(onnx_model, onnx_opset_version)
         onnx_model = polish_model(onnx_model)
     except ValidationError as e:
@@ -128,10 +128,10 @@ def convert(onnx_model_filename, save_dir,
     fluid_program.codes = []
     logger.info('%d ops in, %d ops out', len(onnx_graph.node), len(fluid_program.op_descs))
 
-    # type-shape inference
+    # type-shape info copy
     for name, value_info in graph_value_infos.items():
         var_name = make_var_name(name)
-        fluid_program.VarTypeShapeInfo(var_name, value_info, remove_batch=False) # shape-infer only
+        fluid_program.VarTypeShapeInfo(var_name, value_info, remove_batch=False) #
     bad_var_names = []
     for var_name, var_desc in fluid_program.var_descs.items():
         if not var_desc.type.lod_tensor.HasField('tensor'):
@@ -141,8 +141,8 @@ def convert(onnx_model_filename, save_dir,
         logger.warning('this causes little problem for PaddlePaddle, '
                        'but Paddle Mobile may not infer correctly'
                        )
-        logger.warning('please consider running onnx2fluid.validation with -i '
-                       'to invoke PaddlePaddle type-shape inference')
+        logger.warning('please consider running validation with -i '
+                       'to invoke type-shape inference in PaddlePaddle')
 
     # weight writer
     for name, weight in graph_weights(onnx_graph):

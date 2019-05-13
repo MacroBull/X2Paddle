@@ -32,7 +32,6 @@ def convert(onnx_model_filename, save_dir,
 
     from onnx.checker import ValidationError
     from onnx.checker import check_model
-    from onnx.utils import polish_model
     from onnx.version_converter import convert_version
 
     from .onnx_utils import DEFAULT_OP_DOMAIN
@@ -41,6 +40,7 @@ def convert(onnx_model_filename, save_dir,
     from .onnx_utils import optimize_model_skip_op_for_inference
     from .onnx_utils import optimize_model_strip_initializer
     from .onnx_utils import optimize_model_cast, optimize_model_slice
+    from .onnx_utils import polish_model
     from .writer import Program, Writer
     from .writer import make_var_name
 

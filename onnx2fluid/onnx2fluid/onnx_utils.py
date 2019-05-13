@@ -11,9 +11,11 @@ from __future__ import division
 import logging
 import numpy as np
 import onnx
+import onnx.optimizer as optimizer
 
 from collections import OrderedDict as Dict # as default dict
-from onnx.helper import get_attribute_value, make_attribute
+from onnx.checker import check_model
+from onnx.helper import get_attribute_value, make_attribute, strip_doc_string
 from onnx.mapping import TENSOR_TYPE_TO_NP_TYPE
 from onnx.numpy_helper import to_array
 from onnx.shape_inference import infer_shapes
@@ -24,10 +26,11 @@ logger = logging.getLogger(__name__)
 __all__ = [
     'print_pb_structure',
     'build_value_refs',
-    'node_attrs', 'node_topo', 'node_iter',
     'tensor_dtype', 'tensor_shape',
+    'node_attrs', 'node_topo', 'node_iter',
     'graph_ops', 'graph_weights',
     'inferred_model_value_info',
+    'polish_model',
     'optimize_model_skip_op_for_inference',
     'optimize_model_strip_initializer',
     'optimize_model_cast', 'optimize_model_slice',
@@ -293,6 +296,22 @@ def skip_node_backward(nodes, src_input_name, dst_output_name, output_refs):
                 prev_node.output[val_idx] = dst_output_name
                 processed += 1
     return processed
+
+
+def polish_model(model):
+    """
+    polish_model enhanced for inference
+    """
+
+    check_model(model)
+    strip_doc_string(model)
+    passes = optimizer.get_available_passes()
+    passes = list(filter(lambda name: not name.startswith('split_'), passes)) #
+    logger.debug('optimizations to perform in ONNX:\n\t%s', passes)
+    model = optimizer.optimize(model, passes=passes)
+    model = infer_shapes(model)
+    check_model(model)
+    return model
 
 
 def optimize_model_skip_op_for_inference(
@@ -562,8 +581,6 @@ if __name__ == '__main__':
             level=logging.DEBUG,
             )
 
-    from onnx.checker import check_model
-    from onnx.utils import polish_model
     from onnx.version_converter import convert_version
 
     model = onnx.load('../examples/t1.onnx')

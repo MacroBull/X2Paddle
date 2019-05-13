@@ -12,6 +12,12 @@ import importlib, logging, os, sys
 logger = logging.getLogger(__name__)
 
 
+__all__ = [
+    'fluid_prog_shape_infer',
+    'validate',
+]
+
+
 def flatten_dict(obj,
                  out=None):
     assert isinstance(obj, dict), 'dict type required'

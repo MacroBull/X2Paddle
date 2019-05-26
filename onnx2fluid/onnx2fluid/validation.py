@@ -132,18 +132,26 @@ def validate(fluid_model_filename,
     if golden_data_filename:
         logger.info('using golden data %s', golden_data_filename)
         if golden_data_filename.endswith('.npz'):
-            test_data = np.load(golden_data_filename, encoding='bytes')
+            test_data = np.load(
+                    golden_data_filename,
+                    encoding='bytes', allow_pickle=True,
+                    )
             input_data = test_data['inputs'].tolist()
             output_data = test_data['outputs'].tolist()
         else:
-            test_data = np.load(golden_data_filename, encoding='bytes').tolist()
+            test_data = np.load(
+                    golden_data_filename,
+                    encoding='bytes', allow_pickle=True,
+                    ).tolist()
             input_data = test_data['inputs']
             output_data = test_data['outputs']
+
         input_data = flatten_dict(input_data)
         output_data = flatten_dict(output_data)
         input_names = input_data.keys()
-        logger.info('golden data contain %d inputs or outputs',
-                       len(input_data) + len(output_data))
+        output_names = output_data.keys()
+        logger.info('with %d inputs and %d outputs',
+                    len(input_data), len(output_data))
     else:
         assert inference_input_names, 'input names required for type-shape inference'
 
@@ -177,10 +185,7 @@ def validate(fluid_model_filename,
         except AssertionError as e:
             passed = False
             logger.error('failed: %s\n', e)
-    if passed:
-        logger.info('accuracy passed')
-    else:
-        logger.info('accuracy not passed')
+    logger.info('accuracy %spassed', '' if passed else 'not ')
     return passed
 
 

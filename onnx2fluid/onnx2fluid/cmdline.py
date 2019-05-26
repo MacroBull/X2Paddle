@@ -64,7 +64,7 @@ def main(**kwargs):
         from .validation import validate
 
         save_inference_model = infer_inputs is not None
-        inference_input_names = infer_inputs.split(',') if infer_inputs else None
+        inference_input_names = infer_inputs and infer_inputs.split(',')
 
         logger.info('starting validation on desc ...')
         passed &= validate(shutil.os.path.join(save_dir, '__model__'),

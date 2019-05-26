@@ -229,8 +229,8 @@ def _default(prog, op_type, inputs, outputs, attrs,
     fluid_attrs = default_attrs.copy()
     fluid_attrs.update(mapped_attrs) # as new attrs
 
-    val_inps = inputs if input_perm is None else map(lambda i: inputs[i], input_perm)
-    val_outs = outputs if output_perm is None else map(lambda i: outputs[i], output_perm)
+    val_inps = inputs if input_perm is None else map(inputs.__getitem__, input_perm)
+    val_outs = outputs if output_perm is None else map(outputs.__getitem__, output_perm)
     var_inps = [_make_var_name(val) for val in val_inps]
     var_outs = [_make_var_name(val) for val in val_outs]
     arg_name = ', name={}'.format(repr(name)) if fill_name_field and name else ''
@@ -553,7 +553,7 @@ def _interpolate(prog, inputs, outputs, attrs, value_infos,
         assert len(scales) == 4, 'only 4-D Tensor as X and Y supported'
         assert scales[0] == 1 and scales[1] == 1, 'only scale on (NC)HW supported'
         assert scales[2] == scales[3], 'only aspect-ratio-invariant scale supported'
-    scale = None if scales is None else scales[2]
+    scale = scales and scales[2]
     # try input shape
     if scale is None:
         assert out_shape_, 'neither scales nor output shape is available'

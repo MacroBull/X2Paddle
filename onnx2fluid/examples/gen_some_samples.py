@@ -22,51 +22,55 @@ prefix = 'sample_'
 idx = 0
 
 
-######### example: RNN ########
-#
-#class Model(nn.Module):
-#    def __init__(self):
-#        super(Model, self).__init__()
-#        self.rnn = nn.RNN(4, 6, 2)
-#
-#    def forward(self, x):
-#        y = x
-#        y, h = self.rnn(y)
-#        return y
-#
-#
-#model = Model()
-#model.eval()
-#xb = torch.rand((2, 3, 4))
-#yp = model(xb)
-#idx += 1
-#print('index: ', idx)
-#export_onnx_with_validation(model, [xb], prefix + str(idx),
-#                            ['x'], ['y'],
-#                            verbose=True, training=False)
+######## example: RNN ########
+
+class Model(nn.Module):
+    def __init__(self):
+        super(Model, self).__init__()
+        self.gru = nn.GRU(4, 5, 3)
+        self.lstm = nn.LSTM(5, 6, 2)
+
+    def forward(self, x):
+        y = x
+        y, h = self.gru(y)
+        y, h = self.lstm(y)
+        return y
 
 
-######### example: random ########
-#
-#class Model(nn.Module):
-#    def __init__(self):
-#        super(Model, self).__init__()
-#
-#    def forward(self, x):
-#        y = torch.rand((2, 3)) # + torch.rand_like(xb)
-#        y = y + torch.randn((2, 3)) # + torch.randn_like(xb)
-#        return y
-#
-#
-#model = Model()
-#model.eval()
-#xb = torch.rand((2, 3))
-#yp = model(xb)
-#idx += 1
-#print('index: ', idx)
-#export_onnx_with_validation(model, [xb], prefix + str(idx),
-#                            ['x'], ['y'],
-#                            verbose=True, training=False)
+model = Model()
+model.eval()
+xb = torch.rand((2, 3, 4))
+yp = model(xb)
+idx += 1
+print('index: ', idx)
+export_onnx_with_validation(
+        model, [xb], prefix + str(idx),
+        ['x'], ['y'],
+        verbose=True, training=False)
+
+
+######## example: random ########
+
+class Model(nn.Module):
+    def __init__(self):
+        super(Model, self).__init__()
+
+    def forward(self, x):
+        y = torch.rand((2, 3)) # + torch.rand_like(xb)
+        y = y + torch.randn((2, 3)) # + torch.randn_like(xb)
+        return y
+
+
+model = Model()
+model.eval()
+xb = torch.rand((2, 3))
+yp = model(xb)
+idx += 1
+print('index: ', idx)
+export_onnx_with_validation(
+        model, [xb], prefix + str(idx),
+        ['x'], ['y'],
+        verbose=True, training=False)
 
 
 ######## example: fc ########
@@ -88,9 +92,10 @@ xb = torch.rand((2, 3))
 yp = model(xb)
 idx += 1
 print('index: ', idx)
-export_onnx_with_validation(model, [xb], prefix + str(idx),
-                            ['x'], ['y'],
-                            verbose=True, training=False)
+export_onnx_with_validation(
+        model, [xb], prefix + str(idx),
+        ['x'], ['y'],
+        verbose=True, training=False)
 
 
 ######## example: compare ########
@@ -114,9 +119,10 @@ xb1 = torch.rand((2, 3))
 ya, yb, yc = model(xb0, xb1)
 idx += 1
 print('index: ', idx)
-export_onnx_with_validation(model, [xb0, xb1], prefix + str(idx),
-                            ['x0', 'x1'], ['ya', 'yb', 'yc'],
-                            verbose=True, training=False)
+export_onnx_with_validation(
+        model, [xb0, xb1], prefix + str(idx),
+        ['x0', 'x1'], ['ya', 'yb', 'yc'],
+        verbose=True, training=False)
 
 
 ######## example: affine_grid ########
@@ -136,9 +142,10 @@ theta = torch.rand((2, 2, 3))
 grid = model(theta)
 idx += 1
 print('index: ', idx)
-export_onnx_with_validation(model, (theta, ), prefix + str(idx),
-                            ['theta'], ['grid'],
-                            verbose=True, training=False)
+export_onnx_with_validation(
+        model, (theta, ), prefix + str(idx),
+        ['theta'], ['grid'],
+        verbose=True, training=False)
 
 
 ######## example: conv2d_transpose ########
@@ -162,9 +169,10 @@ xb = torch.rand((2, 3, 4, 5))
 yp = model(xb)
 idx += 1
 print('index: ', idx)
-export_onnx_with_validation(model, [xb], prefix + str(idx),
-                            ['x'], ['y'],
-                            verbose=True, training=False)
+export_onnx_with_validation(
+        model, [xb], prefix + str(idx),
+        ['x'], ['y'],
+        verbose=True, training=False)
 
 
 ######## example: conv2d ########
@@ -174,7 +182,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
         self.conv = nn.Conv2d(3, 8, 3)
         self.batch_norm = nn.BatchNorm2d(8)
-        self.pool = nn.AdaptiveAvgPool2d(2)
+        self.pool = nn.AdaptiveAvgPool2d(1)
 
     def forward(self, x):
         y = x
@@ -190,9 +198,10 @@ xb = torch.rand((2, 3, 4, 5))
 yp = model(xb)
 idx += 1
 print('index: ', idx)
-export_onnx_with_validation(model, [xb], prefix + str(idx),
-                            ['x'], ['y'],
-                            verbose=True, training=False)
+export_onnx_with_validation(
+        model, [xb], prefix + str(idx),
+        ['x'], ['y'],
+        verbose=True, training=False)
 
 
 ######### example: conv1d ########
@@ -214,9 +223,10 @@ export_onnx_with_validation(model, [xb], prefix + str(idx),
 #yp = model(xb)
 #idx += 1
 #print('index: ', idx)
-#export_onnx_with_validation(model, [xb], prefix + str(idx),
-#                            ['x'], ['y'],
-#                            verbose=True, training=False)
+#export_onnx_with_validation(
+#        model, [xb], prefix + str(idx),
+#        ['x'], ['y'],
+#        verbose=True, training=False)
 
 
 ######## example: empty ########
@@ -235,6 +245,7 @@ xb = torch.rand((2, 3))
 yp = model(xb)
 idx += 1
 print('index: ', idx)
-export_onnx_with_validation(model, [xb], prefix + str(idx),
-                            ['y'], ['y'],
-                            verbose=True, training=False)
+export_onnx_with_validation(
+        model, [xb], prefix + str(idx),
+        ['y'], ['y'],
+        verbose=True, training=False)

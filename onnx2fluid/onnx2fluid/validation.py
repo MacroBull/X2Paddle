@@ -11,7 +11,6 @@ import importlib, logging, os, sys
 
 logger = logging.getLogger(__name__)
 
-
 __all__ = [
     'fluid_prog_shape_infer',
     'validate',
@@ -46,7 +45,7 @@ def fluid_prog_shape_infer(prog):
 
     import paddle.fluid as fluid
 
-    assert isinstance(prog, fluid.framework.Program)
+    assert isinstance(prog, fluid.framework.Program), 'prog is not a Program instance'
 
     logger.info('performing type-shape inference ...')
     for block in prog.blocks:
@@ -85,6 +84,8 @@ def validate(fluid_model_filename,
     """
     inference the converted Paddle fluid model, validate with given golden data
     """
+
+    assert isinstance(fluid_model_filename, str)
 
     import numpy as np
     import paddle.fluid as fluid
@@ -149,7 +150,7 @@ def validate(fluid_model_filename,
         input_data = flatten_dict(input_data)
         output_data = flatten_dict(output_data)
         input_names = input_data.keys()
-        output_names = output_data.keys()
+#        output_names = output_data.keys()
         logger.info('with %d inputs and %d outputs',
                     len(input_data), len(output_data))
     else:
@@ -179,9 +180,10 @@ def validate(fluid_model_filename,
     for (name, truth), output in zip(output_data.items(), outputs):
         logger.info('testing on output {} ...'.format(name))
         try:
-            np.testing.assert_allclose(output, truth,
-                                       rtol=rtol, atol=atol,
-                                       equal_nan=False, verbose=True)
+            np.testing.assert_allclose(
+                    output, truth,
+                    rtol=rtol, atol=atol,
+                    equal_nan=False, verbose=True)
         except AssertionError as e:
             passed = False
             logger.error('failed: %s\n', e)
@@ -192,27 +194,34 @@ def validate(fluid_model_filename,
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description='onnx2fluid.validate',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                     )
-    parser.add_argument('model', nargs=1,
-                        help='path to model.py or __model__',
-                        )
-    parser.add_argument('--debug', '-d', action='store_true',
-                        help='enable debug logging and checking',
-                        )
-    parser.add_argument('--test_data', '-t', type=str, default='',
-                        help='I/O golden data for validation, e.g. test.npy, test.npz',
-                        )
-    parser.add_argument('--atol', '-p', type=float, default=1e-3,
-                        help='assertion absolute tolerance for validation',
-                        )
-    parser.add_argument('--rtol', type=float, default=1e-2,
-                        help='assertion relative tolerance for validation',
-                        )
-    parser.add_argument('--infer_inputs', '-i', nargs='?', default=None, const='',
-                        help='perform type-shape inference with given input names and re-save model',
-                        )
+    parser = argparse.ArgumentParser(
+            description='onnx2fluid.validate',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            )
+    parser.add_argument(
+            'model', nargs=1,
+            help='path to model.py or __model__',
+            )
+    parser.add_argument(
+            '--debug', '-d', action='store_true',
+            help='enable debug logging and checking',
+            )
+    parser.add_argument(
+            '--test_data', '-t', type=str, default='',
+            help='I/O golden data for validation, e.g. test.npy, test.npz',
+            )
+    parser.add_argument(
+            '--atol', '-p', type=float, default=1e-3,
+            help='assertion absolute tolerance for validation',
+            )
+    parser.add_argument(
+            '--rtol', type=float, default=1e-2,
+            help='assertion relative tolerance for validation',
+            )
+    parser.add_argument(
+            '--infer_inputs', '-i', nargs='?', default=None, const='',
+            help='perform type-shape inference with given input names and re-save model',
+            )
     args = parser.parse_args()
 
     logging_format = '[%(levelname)8s]%(name)s::%(funcName)s:%(lineno)04d: %(message)s'

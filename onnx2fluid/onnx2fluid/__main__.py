@@ -19,46 +19,59 @@ from __future__ import unicode_literals
 import argparse, logging, sys
 
 
-parser = argparse.ArgumentParser(description='onnx2fluid',
-                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                 )
-parser.add_argument('model', nargs=1,
-                    help='path to model.onnx',
-                    )
-parser.add_argument('--debug', '-d', action='store_true',
-                    help='enable debug logging and checking',
-                    )
-parser.add_argument('--output_dir', '-o', type=str, default='',
-                    help='output directory',
-                    )
-parser.add_argument('--test_data', '-t', type=str, default='',
-                    help='I/O golden data for validation, e.g. test.npy, test.npz',
-                    )
-parser.add_argument('--embed_params', '-e', action='store_true',
-                    help='try to embed parameters for trainable Paddle fluid layers',
-                    )
-parser.add_argument('--pedantic', action='store_true', default=True,
-                    help='accept and convert only standard ONNX opset',
-                    )
-parser.add_argument('--no-pedantic', '-x', action='store_false',
-                    dest='pedantic',
-                    help='process non-standard ONNX ops, this may lead to fails',
-                    )
-parser.add_argument('--skip-version-conversion', '-y', action='store_true', default=False,
-                    help='skip ONNX op version conversion, workaround for RumtimeErrors',
-                    )
-parser.add_argument('--archive', '-z', nargs='?', type=str, default=None, const='',
-                    help='compress outputs to ZIP file if conversion successed',
-                    )
-parser.add_argument('--atol', '-p', type=float, default=1e-3,
-                    help='assertion absolute tolerance for validation',
-                    )
-parser.add_argument('--rtol', type=float, default=1e-2,
-                    help='assertion relative tolerance for validation',
-                    )
-parser.add_argument('--infer_inputs', '-i', nargs='?', default=None, const='',
-                    help='perform type-shape inference with given input names and re-save model',
-                    )
+parser = argparse.ArgumentParser(
+        description='onnx2fluid',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+parser.add_argument(
+        'model', nargs=1,
+        help='path to model.onnx',
+        )
+parser.add_argument(
+        '--debug', '-d', action='store_true',
+        help='enable debug logging and checking',
+        )
+parser.add_argument(
+        '--output_dir', '-o', type=str, default='',
+        help='output directory',
+        )
+parser.add_argument(
+        '--test_data', '-t', type=str, default='',
+        help='I/O golden data for validation, e.g. test.npy, test.npz',
+        )
+parser.add_argument(
+        '--embed_params', '-e', action='store_true',
+        help='try to embed parameters for trainable Paddle fluid layers',
+        )
+parser.add_argument(
+        '--pedantic', action='store_true', default=True,
+        help='accept and convert only standard ONNX opset',
+        )
+parser.add_argument(
+        '--no-pedantic', '-x', action='store_false',
+        dest='pedantic',
+        help='process non-standard ONNX ops, this may lead to fails',
+        )
+parser.add_argument(
+        '--skip-version-conversion', '-y', action='store_true', default=False,
+        help='skip ONNX op version conversion, workaround for RumtimeErrors',
+        )
+parser.add_argument(
+        '--archive', '-z', nargs='?', type=str, default=None, const='',
+        help='compress outputs to ZIP file if conversion successed',
+        )
+parser.add_argument(
+        '--atol', '-p', type=float, default=1e-3,
+        help='assertion absolute tolerance for validation',
+        )
+parser.add_argument(
+        '--rtol', type=float, default=1e-2,
+        help='assertion relative tolerance for validation',
+        )
+parser.add_argument(
+        '--infer_inputs', '-i', nargs='?', default=None, const='',
+        help='perform type-shape inference with given input names and re-save model',
+        )
 args = parser.parse_args()
 
 

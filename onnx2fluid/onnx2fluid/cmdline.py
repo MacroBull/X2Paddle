@@ -67,20 +67,22 @@ def main(**kwargs):
         inference_input_names = infer_inputs and infer_inputs.split(',')
 
         logger.info('starting validation on desc ...')
-        passed &= validate(shutil.os.path.join(save_dir, '__model__'),
-                           golden_data_filename=golden_data_filename,
-                           save_inference_model=save_inference_model,
-                           inference_input_names=inference_input_names,
-                           **kwargs)
+        passed &= validate(
+                shutil.os.path.join(save_dir, '__model__'),
+                golden_data_filename=golden_data_filename,
+                save_inference_model=save_inference_model,
+                inference_input_names=inference_input_names,
+                **kwargs)
 
         logger.info('starting validation on code ...')
         # this re-generate desc proto with Python code when debug on
-        passed &= validate(shutil.os.path.join(save_dir, model_basename),
-                           golden_data_filename=golden_data_filename,
-                           model_func_name=model_func_name,
-                           save_inference_model=save_inference_model,
-                           inference_input_names=inference_input_names,
-                           **kwargs)
+        passed &= validate(
+                shutil.os.path.join(save_dir, model_basename),
+                golden_data_filename=golden_data_filename,
+                model_func_name=model_func_name,
+                save_inference_model=save_inference_model,
+                inference_input_names=inference_input_names,
+                **kwargs)
 
     if not passed:
         logger.fatal('validation failed, exit')

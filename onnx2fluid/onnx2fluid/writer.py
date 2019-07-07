@@ -99,7 +99,7 @@ class Program(object):
         return Program.DTYPE_TO_FRAMEWORK_DTYPE[dtype]
 
     @staticmethod
-    def OpDescVars(vals, *keys):
+    def OpDescVars(keys, vals):
         """
         make (OpDesc.Var)s
         """
@@ -151,10 +151,10 @@ class Program(object):
                         od_attr.strings.extend(value)
                     else:
                         raise ValueError('unsupported attribute {} = {}'.format(key, value))
-                else: # WORKAROUND: shape of scalars is []
-                    raise ValueError('unsupported attribute {} = {}'.format(key, value))
-#                    od_attr.type = framework_pb2.INTS
-#                    logger.warning('using attribute %s = %s as INTS', key, value)
+                else: # WORKAROUND: [] not inferred
+#                    raise ValueError('unsupported attribute {} = {}'.format(key, value))
+                    od_attr.type = framework_pb2.INTS
+                    logger.warning('using attribute %s = %s as INTS', key, value)
             else:
                 raise ValueError('unsupported attribute {} = {}'.format(key, value))
             od_attrs.append(od_attr)
@@ -185,17 +185,17 @@ class Program(object):
             self.codes.append(code)
 
     def OpDesc(self, op_type,
-               input_val_keys=None, output_val_keys=None, attrs=None):
+               input_key_vals=None, output_key_vals=None, attrs=None):
         """
         add OpDesc
         """
 
         desc = framework_pb2.OpDesc()
         desc.type = op_type
-        if input_val_keys:
-            desc.inputs.extend(self.OpDescVars(*input_val_keys))
-        if output_val_keys:
-            desc.outputs.extend(self.OpDescVars(*output_val_keys))
+        if input_key_vals:
+            desc.inputs.extend(self.OpDescVars(*input_key_vals))
+        if output_key_vals:
+            desc.outputs.extend(self.OpDescVars(*output_key_vals))
         if attrs:
             desc.attrs.extend(self.OpDescAttrs(attrs))
         self.op_descs.append(desc)
@@ -369,8 +369,8 @@ class Writer(object):
                                remove_batch,
                                ))
             prog.OpDesc('feed',
-                        (['feed'], 'X'),
-                        ([name], 'Out'),
+                        (['X'], ['feed']),
+                        (['Out'], [name]),
                         {'col': idx},
                         )
             prog.VarDesc(name, value_info=value_info, remove_batch=remove_batch)
@@ -386,8 +386,8 @@ class Writer(object):
             code += name + ', '
 
             prog.OpDesc('fetch',
-                        ([name], 'X'),
-                        (['fetch'], 'Out'),
+                        (['X'], [name]),
+                        (['Out'], ['fetch']),
                         {'col': idx},
                         )
             # var is emitted over ops
@@ -404,12 +404,17 @@ class Writer(object):
         return codes
 
     @staticmethod
-    def write_weight(weight, filename):
+    def write_weight(
+            weight, filename,
+            lod=None):
         """
         write single weight in fluid desc
         """
 
         assert isinstance(weight, np.ndarray), 'weight is not an ndarray'
+        assert lod is None or isinstance(lod, list), 'lod should be None or list'
+
+        lod = lod or [0]
 
         tensor_desc = framework_pb2.VarType.TensorDesc()
         tensor_desc.data_type = Program.Dtype(weight.dtype)
@@ -417,7 +422,7 @@ class Writer(object):
 
         fp = open(filename, 'wb')
         np.array([0], dtype=np.int32).tofile(fp) # version
-        np.array([0], dtype=np.int64).tofile(fp) # LOD level
+        np.array(lod, dtype=np.int64).tofile(fp) # LOD level
         np.array([0], dtype=np.int32).tofile(fp) # tensor version
         np.array([tensor_desc.ByteSize()], dtype=np.int32).tofile(fp)
         fp.write(tensor_desc.SerializeToString())

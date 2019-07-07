@@ -88,7 +88,7 @@ def convert(onnx_model_filename, save_dir,
     # onnx model optimization
     logger.info('model has %d ops', len(onnx_model.graph.node))
     logger.info('optimizing model ...')
-    onnx_model = polish_model(onnx_model)
+    onnx_model = polish_model(onnx_model, checking=onnx_opset_pedantic)
 
     # prepare filesystem
     shutil.rmtree(save_dir, ignore_errors=True)
@@ -117,6 +117,7 @@ def convert(onnx_model_filename, save_dir,
     for name, weight in graph_weights(onnx_graph):
         var_name = make_var_name(name)
         value_info = value_infos[var_name]
+        value_info['lod'] = [0]
         value_info['embedded_as'] = []
         value_info['get_weight'] = (lambda w: lambda: w.tolist())(weight) # lazy getter
 
@@ -126,8 +127,8 @@ def convert(onnx_model_filename, save_dir,
     topo = 'forward'
     for name, domain, op_type, inputs, outputs, attrs in graph_ops(onnx_graph, topo=topo):
         op_name = make_var_name(name)
-        inputs = [make_var_name(val) for val in inputs]
-        outputs = [make_var_name(val) for val in outputs]
+        inputs = list(map(make_var_name, inputs))
+        outputs = list(map(make_var_name, outputs))
         logger.debug('translating op %s(%s) %s::%s ...', name, op_name, domain, op_type)
         if domain == DEFAULT_OP_DOMAIN:
             domain = ''
@@ -173,11 +174,15 @@ def convert(onnx_model_filename, save_dir,
             logger.debug('saving weight %s(%s[%d], %dB) as %s ...',
                          name, weight.dtype, weight.size, weight.nbytes, embedded_names)
             for embedded_name in embedded_names: # multiple references
-                fluid_writer.write_weight(weight, shutil.os.path.join(save_dir, embedded_name))
+                fluid_writer.write_weight(
+                        weight, shutil.os.path.join(save_dir, embedded_name),
+                        lod=value_info['lod'])
         else:
             logger.debug('saving weight %s(%s[%d], %dB) to %s ...',
                          name, weight.dtype, weight.size, weight.nbytes, var_name)
-            fluid_writer.write_weight(weight, shutil.os.path.join(save_dir, var_name))
+            fluid_writer.write_weight(
+                    weight, shutil.os.path.join(save_dir, var_name),
+                    lod=value_info['lod'])
         fluid_writer.emit_param(fluid_program, var_name, value_info)
     param_codes = fluid_program.codes
     fluid_program.codes = []

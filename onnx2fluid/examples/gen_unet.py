@@ -135,6 +135,7 @@ model = UNet(3, 80)
 model.eval()
 xb = torch.rand((1, 3, 512, 512))
 yp = model(xb)
-export_onnx_with_validation(model, [xb], 'sample_unet',
-                            ['image'], ['pred'],
-                            verbose=True, training=False)
+export_onnx_with_validation(
+    model, [xb], 'sample_unet',
+    ['image'], ['pred'],
+    verbose=True, training=False)

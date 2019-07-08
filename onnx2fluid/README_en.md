@@ -20,7 +20,7 @@ PyTorch to Paddlepaddle model conversion can be easily achieved with PyTorch ONN
 
 * python 3.5+ (python 2 not fully supported yet)
 * onnx >= 1.4
-* paddlepaddle >= 1.3.0 (optional for validation)
+* paddlepaddle >= 1.3 (optional for validation)
 
 ## Get started
 

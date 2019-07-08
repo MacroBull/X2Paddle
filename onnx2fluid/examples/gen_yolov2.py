@@ -135,6 +135,7 @@ model = Yolov2()
 model.eval()
 xb = torch.rand((1, 3, 224, 224))
 yp = model(xb)
-export_onnx_with_validation(model, [xb], 'sample_yolov2',
-                            ['image'], ['pred'],
-                            verbose=True, training=False)
+export_onnx_with_validation(
+    model, [xb], 'sample_yolov2',
+    ['image'], ['pred'],
+    verbose=True, training=False)

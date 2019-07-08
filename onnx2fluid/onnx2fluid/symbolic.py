@@ -61,21 +61,27 @@ DEFAULT_OP_MAPPING = {
         'Flatten': ['flatten', ['X'], ['Out']], # attrs bypassed, FIXME: emit flatten2
         'Floor': ['floor', ['X'], ['Out']],
         'Gather': ['gather', ['X'], ['Out'], dict(axis='')],
+        'HardSigmoid': ['hard_sigmoid', ['X'], ['Out'], dict(alpha='slope', beta='offset')],
+        'Identity': ['assign', ['X'], ['Out']],
         'LeakyRelu': ['leaky_relu', ['X'], ['Out']],
         'Log': ['log', ['X'], ['Out']],
         'LRN': ['lrn', ['X'], ['Out', 'MidOut'], dict(size='n', bias='k')], #
         'Reciprocal': ['reciprocal', ['X'], ['Out']],
         'Relu': ['relu', ['X'], ['Out']],
+        'Round': ['round', ['X'], ['Out']],
         'Selu': ['selu', ['X'], ['Out'], dict(gamma='scale')],
         'Shape': ['shape', ['X'], ['Out']], # FIXME: out is int64 vs int32
         'Shrink': ['softshrink', ['X'], ['Out'], dict(bias='', labmd='')],
         'Sigmoid': ['sigmoid', ['X'], ['Out']],
+        'Sign': ['sign', ['X'], ['Out']],
         'Sin': ['sin', ['X'], ['Out']],
         'Squeeze': ['squeeze', ['X'], ['Out']], # attrs bypassed, FIXME: emit squeeze2
         'Softplus': ['softplus', ['X'], ['Out']],
         # FIXME: default axis = -1, reshape required before and after
         'Softmax': ['softmax', ['X'], ['Out'], dict(axis='')],
+        'Softplus': ['softplus', ['X'], ['Out']],
         'Softsign': ['softsign', ['X'], ['Out']],
+        'SpaceToDepth': ['space_to_depth', ['X'], ['Out']],
         'Sqrt': ['sqrt', ['X'], ['Out']],
         'Tanh': ['tanh', ['X'], ['Out']],
         'ThresholdedRelu': ['thresholded_relu', ['X'], ['Out'], dict(alpha='threshold')],
@@ -92,6 +98,7 @@ DEFAULT_OP_MAPPING = {
         'MatMul': ['matmul', ['X', 'Y'], ['Out']], # defaults excluded for transpose_x vs transpose_X
         'Max': ['elementwise_max', ['X', 'Y'], ['Out'], dict(), dict(axis=-1)],
         'Min': ['elementwise_min', ['X', 'Y'], ['Out'], dict(), dict(axis=-1)],
+        'Mod': ['elementwise_mod', ['X', 'Y'], ['Out'], dict(), dict(axis=-1)],
         'Mul': ['elementwise_mul', ['X', 'Y'], ['Out'], dict(), dict(axis=-1)],
         'Not': ['logical_not', ['X', 'Y'], ['Out']],
         'OneHot': # assuming values=[0, 1], axis=-1 and drop them
@@ -1209,7 +1216,7 @@ def GRU(
         if xh_shape:
             hidden_size = xh_shape[-1]
     assert hidden_size, 'hidden_size not inferred'
-#    assert attrs.get('linear_before_reset', 0) == 0, 'only linear_before_reset = 0 supported' # optional
+    assert attrs.get('linear_before_reset', 0) == 0, 'only linear_before_reset = 0 supported' # optional
     direction = attrs.get('direction', 'forward') # optional
     assert direction != 'bidirectional', 'direction = bidirectional not supported'
     activations = attrs.get('activations', ['Sigmoid', 'Tanh']) # optional
@@ -1387,7 +1394,7 @@ def LSTM(
         if p_shape:
             hidden_size = p_shape[-1] // 3
     assert hidden_size, 'hidden_size not inferred'
-#    assert attrs.get('linear_before_reset', 0) == 0, 'only linear_before_reset = 0 supported' # optional
+    assert attrs.get('linear_before_reset', 0) == 0, 'only linear_before_reset = 0 supported' # optional
     assert attrs.get('input_forget', 0) == 0,  'only input_forget = 0 supported' # optional
     direction = attrs.get('direction', 'forward') # optional
     assert direction != 'bidirectional', 'direction = bidirectional not supported'

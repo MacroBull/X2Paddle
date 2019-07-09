@@ -25,12 +25,12 @@ def make_var_name(name):
 
     if name == '':
         return ''
-    if name[0].isdigit():
-        return 'var_' + name
     for s in ' \\|/:.-':
         name = name.replace(s, '_')
     if name.startswith('_'):
         name = 'var' + name
+    elif name[0].isdigit():
+        name = 'var_' + name
     return name
 
 
@@ -117,7 +117,7 @@ def convert(onnx_model_filename, save_dir,
     for name, weight in graph_weights(onnx_graph):
         var_name = make_var_name(name)
         value_info = value_infos[var_name]
-        value_info['lod'] = [0]
+        value_info['lod'] = []
         value_info['embedded_as'] = []
         value_info['get_weight'] = (lambda w: lambda: w.tolist())(weight) # lazy getter
 

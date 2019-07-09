@@ -342,14 +342,13 @@ def polish_model(model,
 
 def polish_and_save(
         model_filename,
-        suffix='.polished', save_filename=None,
+        save_filename='', suffix='.polished',
         *args, **kwargs):
     """
     run polish_model and save
     """
 
-    if save_filename is None:
-        save_filename = model_filename.replace('.onnx', suffix + '.onnx')
+    save_filename = save_filename or model_filename.replace('.onnx', suffix + '.onnx')
 
     model = onnx.load(model_filename)
     model = polish_model(model, *args, **kwargs)

@@ -154,8 +154,7 @@ def validate(fluid_model_filename,
         logger.info('with %d inputs and %d outputs',
                     len(input_data), len(output_data))
     elif save_inference_model:
-        assert inference_input_names is not None, (
-                'input names required for type-shape inference')
+        assert inference_input_names, 'input names required for type-shape inference'
 
         input_names = inference_input_names
         logger.info('using input names: %s', ', '.join(input_names))
@@ -234,7 +233,7 @@ def main():
     golden_data_filename = args.test_data
     atol, rtol = args.atol, args.rtol
     save_inference_model = args.infer_inputs is not None
-    inference_input_names = args.infer_inputs.split(',') if args.infer_inputs else None
+    inference_input_names = args.infer_inputs.split(',') if save_inference_model else None
 
     validate(fluid_model_filename,
              golden_data_filename=golden_data_filename,

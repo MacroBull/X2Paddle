@@ -64,7 +64,7 @@ def main(**kwargs):
     if golden_data_filename or save_inference_model:
         from .validation import validate
 
-        if save_inference_model:
+        if infer_inputs:
             inference_input_names = infer_inputs.split(',')
         else:
             inference_input_names = None

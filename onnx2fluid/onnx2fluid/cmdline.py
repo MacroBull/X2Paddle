@@ -47,6 +47,7 @@ def main(**kwargs):
     model_basename = DEFAULT_MODEL_MODULE + '.py'
     model_func_name = DEFAULT_MODEL_FUNC
     onnx_opset_pedantic = kwargs.pop('pedantic', True)
+    onnx_skip_optimization = kwargs.pop('naive', False)
     skip_version_conversion = kwargs.pop('skip_version_conversion', False)
     onnx_opset_version = None if skip_version_conversion else DEFAULT_ONNX_OPSET_VERSION
 
@@ -56,6 +57,7 @@ def main(**kwargs):
             model_func_name=model_func_name,
             onnx_opset_version=onnx_opset_version,
             onnx_opset_pedantic=onnx_opset_pedantic,
+            onnx_skip_optimization=onnx_skip_optimization,
             **kwargs)
 
     # validate

@@ -89,7 +89,7 @@ def validate(fluid_model_filename,
 
     import numpy as np
     import paddle.fluid as fluid
-    
+
     logger = logging.getLogger('onnx2fluid')
 
     place = fluid.CPUPlace()
@@ -124,6 +124,7 @@ def validate(fluid_model_filename,
         logger.info('import passed')
 
         prog = fluid.default_main_program()
+        prog = prog.clone(for_test=True) # force inference mode
         fluid.io.load_persistables(executor=exe, dirname=fluid_model_dir, main_program=prog)
         logger.info('weight load passed')
     else:
@@ -173,6 +174,7 @@ def validate(fluid_model_filename,
 
     # execute
     outputs = exe.run(prog, feed=input_data, fetch_list=out_names) # out_names can be vars
+    exe.close()
     logger.info('execution passed')
 
     # validate

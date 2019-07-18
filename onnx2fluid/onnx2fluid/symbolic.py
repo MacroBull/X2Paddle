@@ -860,7 +860,7 @@ def Constant(
         shape = list(value.shape)
         _logger.warning('in op (Constant -> %s): '
                         'attribute "shape" of %s not inferred, '
-                        'using value as 1-D tensor may lead to fails',
+                        'using value as 1-D tensor may lead to failures',
                         outputs,
                         var_output)
 

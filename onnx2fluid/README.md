@@ -6,7 +6,7 @@ onnx2fluid支持将ONNX模型转换为PaddlePaddle模型，并用于预测，用
 
 ## 特色
 
-* 导出Python代码和fluid ProgramDesc模型
+* 导出可训练Python代码和可预测fluid ProgramDesc模型
 * 权重可嵌入支持的算子中
 * 转换验证打包三合一
 * 转换过程不依赖PaddlePaddle
@@ -60,6 +60,7 @@ optional arguments:
   --debug, -d           启用调试
   --embed_params, -e    尝试权重内嵌
   --no-pedantic, -x     转换扩展的ONNX算子
+  --naive, -n           不对ONNX模型进行优化, 保持转换后的模型可训练
   --skip-version-conversion, -y
                         跳过ONNX算子版本转换
   --output_dir, -o      指定输出目录
@@ -72,7 +73,7 @@ optional arguments:
 转换工具onnx2fluid.conversion:
 
 ```shell
-onnx2fluid.conversion [-dexy] [-o /path/to/export_dir/] /path/to/onnx/model.onnx 
+onnx2fluid.conversion [-denxy] [-o /path/to/export_dir/] /path/to/onnx/model.onnx 
 ```
 
 验证工具onnx2fluid.validate:

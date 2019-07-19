@@ -8,7 +8,7 @@ PyTorch to Paddlepaddle model conversion can be easily achieved with PyTorch ONN
 
 ## Features
 
-* Python code + ProgramDesc proto generation, flexible and compatible
+* generate Python code for training + ProgramDesc proto for inference, flexible and compatible
 * fluid layer weight embedding support
 * conversion, validation, archiving all in one
 * convert without PaddlePaddle dependency
@@ -58,6 +58,7 @@ optional arguments:
   --debug, -d           enable debug logging and checking
   --embed_params, -e    try to embed parameters for trainable PaddlePaddle fluid layers
   --no-pedantic, -x     process non-standard ONNX ops
+  --naive, -n           keep model naive, which means trainable
   --skip-version-conversion, -y
                         skip ONNX op version conversion, workaround for RumtimeErrors
   --output_dir, -o      output directory

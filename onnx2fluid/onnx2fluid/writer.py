@@ -242,7 +242,7 @@ class Program(object):
         self.code_mutable = False
         try:
             self.Op(domain, op_type, inputs, outputs, attrs, *args, **kwargs)
-        except BaseException as e:
+        except Exception as e:
             self.code_mutable = code_mutable
             raise e
         else:

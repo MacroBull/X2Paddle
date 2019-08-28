@@ -144,7 +144,7 @@ def convert(onnx_model_filename, save_dir,
                     value_infos,
                     embed_params=embed_params,
                     )
-        except BaseException as e:
+        except Exception as e:
             logger.fatal('conversion failed for:\n\t%s -> %s::%s -> %s',
                          inputs, domain, op_type, outputs)
             raise e

@@ -1905,6 +1905,7 @@ def Shape(
     prog.OpDesc(fluid_op,
                 (['Input'], [var_data]),
                 (['Out'], [var_shape_i64]),
+                dict(),
                 )
     prog.Op('', 'Cast',
             [var_shape_i64],
